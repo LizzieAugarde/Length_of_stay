@@ -64,15 +64,18 @@ los2014_ae_events <- los2014_ae_events %>%
   select(-c(death_diag_comp, diag_att_comp, fuend_att_comp, cohort_check)) %>% #removing check variables
   #how long after diagnosis each attendance occurs  
   mutate(att_days_post_diag = difftime(as.Date(arrivaldate), as.Date(follow_up_start), units = "days")) %>%
-  mutate(att_months_post_diag = case_when(att_days_post_diag < 93  ~ "Within 3 months",
-                                          att_days_post_diag > 92 & att_days_post_diag < 183 ~ "3-6 months",
-                                          att_days_post_diag > 182 & att_days_post_diag < 366  ~ "6-12 months",
-                                          att_days_post_diag > 365  ~ "At least 12 months",)) %>%
-  mutate(att_years_post_diag = case_when(att_days_post_diag < 366 ~ "Within 1 year",
-                                         att_days_post_diag > 365 & att_days_post_diag < 731 ~ "1-2 years",
-                                         att_days_post_diag > 730 & att_days_post_diag < 1096  ~ "2-3 years",
-                                         att_days_post_diag > 1095 & att_days_post_diag < 1461  ~ "3-4 years",
-                                         att_days_post_diag > 1460 ~ "4-5 years",)) %>% 
+  mutate(att_3months = ifelse(att_days_post_diag < 93, "Yes", "No"),
+         att_6months = ifelse(att_days_post_diag < 183, "Yes", "No"),
+         att_9months = ifelse(att_days_post_diag < 274, "Yes", "No"),
+         att_12months = ifelse(att_days_post_diag < 366, "Yes", "No"),
+         att_1.5years = ifelse(att_days_post_diag < 550, "Yes", "No"),
+         att_2years = ifelse(att_days_post_diag < 731, "Yes", "No"),
+         att_2.5years = ifelse(att_days_post_diag < 914, "Yes", "No"),
+         att_3years = ifelse(att_days_post_diag < 1096, "Yes", "No"),
+         att_3.5years = ifelse(att_days_post_diag < 1279, "Yes", "No"),
+         att_4years = ifelse(att_days_post_diag < 1461, "Yes", "No"),
+         att_4.5years = ifelse(att_days_post_diag < 1643, "Yes", "No"),
+         att_5years = ifelse(att_days_post_diag < 1826, "Yes", "No")) %>%
   #identifying how long after diagnosis each patient survives
   mutate(surv_days_post_diag = difftime(as.Date(deathdatebest), as.Date(follow_up_start), units = "days")) %>%
   mutate(alive_3months = ifelse(surv_days_post_diag >= 92 | is.na(surv_days_post_diag), "Yes", "No"), #marking those who die within 3 months of diagnosis with "Yes"
