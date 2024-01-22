@@ -86,27 +86,40 @@ los2014_ae_events <- los2014_ae_events %>%
          alive_4years = ifelse(surv_days_post_diag >= 1460 | is.na(surv_days_post_diag), "Yes", "No"),
          alive_5years = ifelse(surv_days_post_diag >= 1825 | is.na(surv_days_post_diag), "Yes", "No"))
 
-#write out record level A&E data
-write.csv(los2014_ae_events, "N:/INFO/_LIVE/NCIN/Macmillan_Partnership/Length of Stay - 2023/Data/Record-level cleaned A&E data 20240122.csv")
+#write out record level A&E attendance data
+write.csv(los2014_ae_events, "N:/INFO/_LIVE/NCIN/Macmillan_Partnership/Length of Stay - 2023/Data/Attendance record-level cleaned A&E data 20240122.csv")
 
 #survival variables only data frame
 los2014_ae_patients_survival <- los2014_ae_events %>%
-select(patientid, alive_3months, alive_6months, alive_12months, 
-       alive_2years, alive_3years, alive_4years, alive_5years) %>%
+  select(patientid, alive_3months, alive_6months, alive_12months, 
+         alive_2years, alive_3years, alive_4years, alive_5years) %>%
   unique()
 
 #aggregating number of attendances by time period for each patient
 los2014_ae_patient_agg_months <- los2014_ae_events %>%
   mutate(attend_count = 1) %>%
   group_by(patientid) %>%
-  
-  
-  
-  
-  summarise(attend_sum = sum(attend_count)) %>%
-  pivot_wider(., names_from = att_months_post_diag, values_from = attend_sum, values_fill = 0) %>%
+  summarize(att_3months = sum(att_3months), att_6months = sum(att_6months), att_9months = sum(att_9months), att_12months = sum(att_12months), 
+            att_1.5years = sum(att_1.5years), att_2years = sum(att_2years), 
+            att_2.5years = sum(att_2.5years), att_3years = sum(att_3years),
+            att_3.5years = sum(att_3.5years), att_4years = sum(att_4years),
+            att_4.5years = sum(att_4.5years), att_5years = sum(att_5years)) %>%
   left_join(select(los2014_ae_patients_survival, patientid, alive_3months, alive_6months, alive_12months, 
                    alive_2years, alive_3years, alive_4years, alive_5years), by = "patientid")
+  
+#write out patient level aggregated A&E data
+write.csv(los2014_ae_patient_agg_months, "N:/INFO/_LIVE/NCIN/Macmillan_Partnership/Length of Stay - 2023/Data/Patient-level aggregated A&E data 20240122.csv")
+
+#denominator data frame (number of patients alive at each time period)
+survival_cohorts <- los2014_ae_patient_agg_months %>% 
+  select(-starts_with("att")) %>%
+  pivot_longer(-patientid, names_to = "time_period", values_to = "alive") %>%
+  group_by(time_period, alive) %>%
+  summarize(count = n()) %>%
+  pivot_wider(names_from = alive, values_from = count, values_fill = 0)
+  
+  
+  
   
   
   
