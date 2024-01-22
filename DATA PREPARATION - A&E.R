@@ -80,10 +80,15 @@ los2014_ae_events <- los2014_ae_events %>%
   mutate(surv_days_post_diag = difftime(as.Date(deathdatebest), as.Date(follow_up_start), units = "days")) %>%
   mutate(alive_3months = ifelse(surv_days_post_diag >= 92 | is.na(surv_days_post_diag), "Yes", "No"), #marking those who die within 3 months of diagnosis with "Yes"
          alive_6months = ifelse(surv_days_post_diag >= 182 | is.na(surv_days_post_diag), "Yes", "No"),
+         alive_9months = ifelse(surv_days_post_diag >= 273 | is.na(surv_days_post_diag), "Yes", "No"),
          alive_12months = ifelse(surv_days_post_diag >= 365 | is.na(surv_days_post_diag), "Yes", "No"),
+         alive_1.5years = ifelse(surv_days_post_diag >= 549 | is.na(surv_days_post_diag), "Yes", "No"),
          alive_2years = ifelse(surv_days_post_diag >= 730 | is.na(surv_days_post_diag), "Yes", "No"),
+         alive_2.5years = ifelse(surv_days_post_diag >= 913 | is.na(surv_days_post_diag), "Yes", "No"),
          alive_3years = ifelse(surv_days_post_diag >= 1095 | is.na(surv_days_post_diag), "Yes", "No"),
+         alive_3.5years = ifelse(surv_days_post_diag >= 1278 | is.na(surv_days_post_diag), "Yes", "No"),
          alive_4years = ifelse(surv_days_post_diag >= 1460 | is.na(surv_days_post_diag), "Yes", "No"),
+         alive_4.5years = ifelse(surv_days_post_diag >= 1642 | is.na(surv_days_post_diag), "Yes", "No"),
          alive_5years = ifelse(surv_days_post_diag >= 1825 | is.na(surv_days_post_diag), "Yes", "No"))
 
 #write out record level A&E attendance data
@@ -110,18 +115,5 @@ los2014_ae_patient_agg_months <- los2014_ae_events %>%
 #write out patient level aggregated A&E data
 write.csv(los2014_ae_patient_agg_months, "N:/INFO/_LIVE/NCIN/Macmillan_Partnership/Length of Stay - 2023/Data/Patient-level aggregated A&E data 20240122.csv")
 
-#denominator data frame (number of patients alive at each time period)
-survival_cohorts <- los2014_ae_patient_agg_months %>% 
-  select(-starts_with("att")) %>%
-  pivot_longer(-patientid, names_to = "time_period", values_to = "alive") %>%
-  group_by(time_period, alive) %>%
-  summarize(count = n()) %>%
-  pivot_wider(names_from = alive, values_from = count, values_fill = 0)
-  
-  
-  
-  
-  
-  
-  
+
   
