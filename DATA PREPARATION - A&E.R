@@ -64,18 +64,18 @@ los2014_ae_events <- los2014_ae_events %>%
   select(-c(death_diag_comp, diag_att_comp, fuend_att_comp, cohort_check)) %>% #removing check variables
   #how long after diagnosis each attendance occurs  
   mutate(att_days_post_diag = difftime(as.Date(arrivaldate), as.Date(follow_up_start), units = "days")) %>%
-  mutate(att_3months = ifelse(att_days_post_diag < 93, "Yes", "No"),
-         att_6months = ifelse(att_days_post_diag < 183, "Yes", "No"),
-         att_9months = ifelse(att_days_post_diag < 274, "Yes", "No"),
-         att_12months = ifelse(att_days_post_diag < 366, "Yes", "No"),
-         att_1.5years = ifelse(att_days_post_diag < 550, "Yes", "No"),
-         att_2years = ifelse(att_days_post_diag < 731, "Yes", "No"),
-         att_2.5years = ifelse(att_days_post_diag < 914, "Yes", "No"),
-         att_3years = ifelse(att_days_post_diag < 1096, "Yes", "No"),
-         att_3.5years = ifelse(att_days_post_diag < 1279, "Yes", "No"),
-         att_4years = ifelse(att_days_post_diag < 1461, "Yes", "No"),
-         att_4.5years = ifelse(att_days_post_diag < 1643, "Yes", "No"),
-         att_5years = ifelse(att_days_post_diag < 1826, "Yes", "No")) %>%
+  mutate(att_3months = ifelse(att_days_post_diag < 93, 1, 0),
+         att_6months = ifelse(att_days_post_diag < 183, 1, 0),
+         att_9months = ifelse(att_days_post_diag < 274, 1, 0),
+         att_12months = ifelse(att_days_post_diag < 366, 1, 0),
+         att_1.5years = ifelse(att_days_post_diag < 550, 1, 0),
+         att_2years = ifelse(att_days_post_diag < 731, 1, 0),
+         att_2.5years = ifelse(att_days_post_diag < 914, 1, 0),
+         att_3years = ifelse(att_days_post_diag < 1096, 1, 0),
+         att_3.5years = ifelse(att_days_post_diag < 1279, 1, 0),
+         att_4years = ifelse(att_days_post_diag < 1461, 1, 0),
+         att_4.5years = ifelse(att_days_post_diag < 1643, 1, 0),
+         att_5years = ifelse(att_days_post_diag < 1826, 1, 0)) %>%
   #identifying how long after diagnosis each patient survives
   mutate(surv_days_post_diag = difftime(as.Date(deathdatebest), as.Date(follow_up_start), units = "days")) %>%
   mutate(alive_3months = ifelse(surv_days_post_diag >= 92 | is.na(surv_days_post_diag), "Yes", "No"), #marking those who die within 3 months of diagnosis with "Yes"
@@ -98,7 +98,11 @@ select(patientid, alive_3months, alive_6months, alive_12months,
 #aggregating number of attendances by time period for each patient
 los2014_ae_patient_agg_months <- los2014_ae_events %>%
   mutate(attend_count = 1) %>%
-  group_by(patientid, att_months_post_diag) %>%
+  group_by(patientid) %>%
+  
+  
+  
+  
   summarise(attend_sum = sum(attend_count)) %>%
   pivot_wider(., names_from = att_months_post_diag, values_from = attend_sum, values_fill = 0) %>%
   left_join(select(los2014_ae_patients_survival, patientid, alive_3months, alive_6months, alive_12months, 
