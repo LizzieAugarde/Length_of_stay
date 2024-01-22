@@ -6,6 +6,8 @@
 #Created November 2023 by Lizzie Augarde 
 #Change log:
 #06/12/2023 adapted to read in from csv and developed cleaning and processing steps
+#22/01/2024 filtered to attendances within the 5 year post diagnosis window. Added
+#variables to identify who survives to different time periods
 ############################################################### 
 
 #prep
@@ -58,7 +60,7 @@ length(which(los2014_ae_events$cohort_check  == "FALSE")) #all patients in event
 los2014_ae_events <- los2014_ae_events %>% 
   clean_names() %>%
   unique() %>% #removing duplicate events
-  select(-c(death_diag_comp, diag_att_comp, fuend_att_comp, cohort_check)) %>% #removing check variables
+  #select(-c(death_diag_comp, diag_att_comp, fuend_att_comp, cohort_check)) %>% #removing check variables
   #how long after diagnosis each attendance occurs  
   mutate(att_days_post_diag = difftime(as.Date(arrivaldate), as.Date(follow_up_start), units = "days")) %>%
   mutate(att_months_post_diag = case_when(att_days_post_diag < 93  ~ "Within 3 months",
@@ -72,15 +74,13 @@ los2014_ae_events <- los2014_ae_events %>%
                                          att_days_post_diag > 1460 ~ "4-5 years",)) %>% 
   #identifying how long after diagnosis each patient survives
   mutate(surv_days_post_diag = difftime(as.Date(deathdatebest), as.Date(follow_up_start), units = "days")) %>%
-  mutate(surv_months_post_diag = case_when(surv_days_post_diag < 93  ~ "Less than 3 months",
-                                           surv_days_post_diag > 92 & surv_days_post_diag < 183 ~ "3-6 months",
-                                           surv_days_post_diag > 182 & surv_days_post_diag < 366  ~ "6-12 months",
-                                           surv_days_post_diag > 365  ~ "At least 12 months",)) %>%
-  mutate(surv_years_post_diag = case_when(surv_days_post_diag < 366 ~ "Within 1 year",
-                                          surv_days_post_diag > 365 & surv_days_post_diag < 731 ~ "1-2 years",
-                                          surv_days_post_diag > 730 & surv_days_post_diag < 1096  ~ "2-3 years",
-                                          surv_days_post_diag > 1095 & surv_days_post_diag < 1461  ~ "3-4 years",
-                                          surv_days_post_diag > 1460 ~ "4-5 years",)) %>% 
+  mutate(alive_3months = ifelse(surv_days_post_diag >= 92 | is.na(surv_days_post_diag), "Yes", "No"), #marking those who die within 3 months of diagnosis with "Yes"
+         alive_6months = ifelse(surv_days_post_diag >= 182 | is.na(surv_days_post_diag), "Yes", "No"),
+         alive_12months = ifelse(surv_days_post_diag >= 365 | is.na(surv_days_post_diag), "Yes", "No"),
+         alive_2years = ifelse(surv_days_post_diag >= 730 | is.na(surv_days_post_diag), "Yes", "No"),
+         alive_3years = ifelse(surv_days_post_diag >= 1095 | is.na(surv_days_post_diag), "Yes", "No"),
+         alive_4years = ifelse(surv_days_post_diag >= 1460 | is.na(surv_days_post_diag), "Yes", "No"),
+         alive_5years = ifelse(surv_days_post_diag >= 1825 | is.na(surv_days_post_diag), "Yes", "No"))
 
 
   
