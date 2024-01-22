@@ -1,4 +1,4 @@
-###################### Length of stay 2023######################
+###################### Length of stay 2023 ######################
 
 #Script to process linked A&E data/registry data from HES (A&E events 
 #in first 5 years post diagnosis from AT_PATHWAY linked on TUMOURID)
@@ -7,7 +7,8 @@
 #Change log:
 #06/12/2023 adapted to read in from csv and developed cleaning and processing steps
 #22/01/2024 filtered to attendances within the 5 year post diagnosis window. Added
-#variables to identify who survives to different time periods
+#variables to identify who survives to different time periods. Aggregating to number
+#of attendances per patient by time period
 ############################################################### 
 
 #prep
@@ -60,7 +61,7 @@ length(which(los2014_ae_events$cohort_check  == "FALSE")) #all patients in event
 los2014_ae_events <- los2014_ae_events %>% 
   clean_names() %>%
   unique() %>% #removing duplicate events
-  #select(-c(death_diag_comp, diag_att_comp, fuend_att_comp, cohort_check)) %>% #removing check variables
+  select(-c(death_diag_comp, diag_att_comp, fuend_att_comp, cohort_check)) %>% #removing check variables
   #how long after diagnosis each attendance occurs  
   mutate(att_days_post_diag = difftime(as.Date(arrivaldate), as.Date(follow_up_start), units = "days")) %>%
   mutate(att_months_post_diag = case_when(att_days_post_diag < 93  ~ "Within 3 months",
@@ -82,7 +83,23 @@ los2014_ae_events <- los2014_ae_events %>%
          alive_4years = ifelse(surv_days_post_diag >= 1460 | is.na(surv_days_post_diag), "Yes", "No"),
          alive_5years = ifelse(surv_days_post_diag >= 1825 | is.na(surv_days_post_diag), "Yes", "No"))
 
+#write out record level A&E data
+write.csv(los2014_ae_events, "N:/INFO/_LIVE/NCIN/Macmillan_Partnership/Length of Stay - 2023/Data/Record-level cleaned A&E data 20240122.csv")
 
+#survival variables only data frame
+los2014_ae_patients_survival <- los2014_ae_events %>%
+select(patientid, alive_3months, alive_6months, alive_12months, 
+       alive_2years, alive_3years, alive_4years, alive_5years) %>%
+  unique()
+
+#aggregating number of attendances by time period for each patient
+los2014_ae_patient_agg_months <- los2014_ae_events %>%
+  mutate(attend_count = 1) %>%
+  group_by(patientid, att_months_post_diag) %>%
+  summarise(attend_sum = sum(attend_count)) %>%
+  pivot_wider(., names_from = att_months_post_diag, values_from = attend_sum, values_fill = 0) %>%
+  left_join(select(los2014_ae_patients_survival, patientid, alive_3months, alive_6months, alive_12months, 
+                   alive_2years, alive_3years, alive_4years, alive_5years), by = "patientid")
   
   
   
