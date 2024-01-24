@@ -14,7 +14,7 @@ library(janitor)
 
 casref01 <- createConnection()
 
-#extract
+#extract - extract from SQL takes ages, better to read from csvs in data folder (below)
 apc_query <- "select a.tumourid, 
                      a.patientid, 
                      a.follow_up_start, 
@@ -29,10 +29,10 @@ apc_query <- "select a.tumourid,
                      max(case when d.pos = 2 then d.diag_4 end) as diag_2,
                      max(case when d.pos = 3 then d.diag_4 end) as diag_3
       from analysiselizabethaugarde.los2014_cohort a left join 
-          heslive.hes_linkage_av_apc@casref01 b on a.patientid = b.patientid left join --link to HES linkage fields
-          heslive.hesapc@casref01 c on b.epikeyanon = c.epikeyanon and b.datayear = c.datayear left join --link to HES inpatient records
-          heslive.hesapc_diag@casref01 d on c.epikeyanon = d.epikeyanon and c.datayear = d.datayear --link to HES inpatient diagnostic codes
-      where (c.datayear > 2013 and c.datayear < 2022)
+          heslive.hes_linkage_av_apc@casref01 b on a.patientid = b.patientid left join 
+          heslive.hesapc@casref01 c on b.epikeyanon = c.epikeyanon and b.datayear = c.datayear left join 
+          heslive.hesapc_diag@casref01 d on c.epikeyanon = d.epikeyanon and c.datayear = d.datayear 
+      where c.datayear in ('1516', '1617')
       group by a.tumourid,
                a.patientid,
                a.follow_up_start,
@@ -45,6 +45,14 @@ apc_query <- "select a.tumourid,
                c.admimeth"
 
 los2014_apc_events <- dbGetQueryOracle(casref01, apc_query, rowlimit = NA)
+
+#read from csvs 
+los2014_apc_events_1314_1415 <- read.csv("N:/INFO/_LIVE/NCIN/Macmillan_Partnership/Length of Stay - 2023/Data/LOS2014_APC_EVENTS_1314_1415_20240124.csv")
+los2014_apc_events_1516_1617 <- read.csv("N:/INFO/_LIVE/NCIN/Macmillan_Partnership/Length of Stay - 2023/Data/LOS2014_APC_EVENTS_1516_1617_20240123.csv")
+los2014_apc_events_1718_1819 <- read.csv("N:/INFO/_LIVE/NCIN/Macmillan_Partnership/Length of Stay - 2023/Data/LOS2014_APC_EVENTS_1718_1819_20240124.csv")
+los2014_apc_events_1920_2021 <- read.csv("N:/INFO/_LIVE/NCIN/Macmillan_Partnership/Length of Stay - 2023/Data/LOS2014_APC_EVENTS_1920_2021_20240124.csv")
+
+los2014_apc_events <- rbind(los2014_apc_events_1314_1415, los2014_apc_events_1516_1617, los2014_apc_events_1718_1819, los2014_apc_events_1920_2021)
 
 #checks 
 nrow(los2014_apc_events[duplicated(los2014_apc_events), ]) #duplicate rows 
