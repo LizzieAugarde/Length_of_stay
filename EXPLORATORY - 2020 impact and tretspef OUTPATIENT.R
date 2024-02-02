@@ -137,3 +137,57 @@ los2014_sample_op_events_RT <- dbGetQueryOracle(casref01, query, rowlimit = NA)
 
 write.csv(los2014_sample_op_events_RT, "N:/INFO/_LIVE/NCIN/Macmillan_Partnership/Length of Stay - 2023/Data/Tretspefs_RT_patients_20240104.csv")
 
+
+######## Identifying tretspef tumour combinations with at least 1% of appts
+#pulling all data rather than sample, for the top 25 combinations identified from random sampling
+query <- "select 
+    a.tumourid, 
+    a.patientid, 
+    a.site_icd10_o2_3char,
+    a.follow_up_start, 
+    a.follow_up_end, 
+    a.deathdatebest, 
+    c.attendkeyanon,
+    c.datayear,
+    c.apptdate,
+    c.attended,
+    c.stafftyp,
+    c.tretspef
+from analysiselizabethaugarde.los2014_cohort_tg a
+left join heslive.hes_linkage_av_op@casref01 b on a.patientid = b.patientid
+left join heslive.hesop@casref01 c on b.attendkeyanon = c.attendkeyanon and b.datayear = c.datayear
+where c.datayear in ('1314', '1415', '1516', '1617', '1718', '1819', '1920')
+  and c.tretspef in ('800', '370', '318', '101', '130', '100', '103', '812', '303', '330', '160', '340',   
+                     '320', '110', '120', '104', '315', '650', '140', '502', '301', '410', '300', '503', '324')
+  and a.patientid is not null"
+
+los2014_op_events <- dbGetQueryOracle(casref01, query, rowlimit = NA)
+
+#date adjustments
+los2014_op_events <- los2014_op_events %>%
+  clean_names() %>%
+  mutate(diag_year = 2014) %>%
+  mutate(follow_up_start = as.Date(follow_up_start),
+         follow_up_end = as.Date(follow_up_end),
+         apptdate = as.Date(apptdate)) %>%
+  filter(follow_up_start <= apptdate) %>%
+  filter(apptdate <= follow_up_end) %>%
+  mutate(appt_days_post_diag = apptdate-follow_up_start) %>% #days between diagnosis and appointment
+  mutate(appt_years_post_diag = case_when(appt_days_post_diag < 366 ~ paste0("Less than 1 year\n(", diag_year, "-", diag_year+1, ")"),
+                                          appt_days_post_diag > 365 & appt_days_post_diag < 731 ~ paste0("1-2 years\n(", diag_year+1, "-", diag_year+2, ")"),
+                                          appt_days_post_diag > 730 & appt_days_post_diag < 1096 ~ paste0("2-3 years\n(", diag_year+2, "-", diag_year+3, ")"),
+                                          appt_days_post_diag > 1095 & appt_days_post_diag < 1461 ~ paste0("3-4 years\n(", diag_year+3, "-", diag_year+4, ")"),
+                                          appt_days_post_diag > 1460 ~ paste0("4-5 years\n(", diag_year+4, "-", diag_year+5, ")"))) 
+
+#grouping
+los_op_events_agg <- los2014_op_events %>%
+  group_by(diag_year, appt_years_post_diag, stafftyp, tretspef) %>%
+  summarise(total_appts = n())
+
+#treatment specialties in subsets of patients 
+tretspefs_by_tg <- los2014_op_events %>%
+  group_by(site_icd10_o2_3char, tretspef) %>%
+  summarise(total_appts = n())
+
+write.csv(tretspefs_by_tg, "N:/INFO/_LIVE/NCIN/Macmillan_Partnership/Length of Stay - 2023/Data/Tretspefs_by_tumour_group_full_cohort_20240202.csv")
+
