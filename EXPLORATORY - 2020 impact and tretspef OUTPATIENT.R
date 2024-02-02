@@ -153,7 +153,7 @@ query <- "select
     c.attended,
     c.stafftyp,
     c.tretspef
-from analysiselizabethaugarde.los2014_cohort_tg a
+from analysiselizabethaugarde.los2014_cohort a
 left join heslive.hes_linkage_av_op@casref01 b on a.patientid = b.patientid
 left join heslive.hesop@casref01 c on b.attendkeyanon = c.attendkeyanon and b.datayear = c.datayear
 where c.datayear in ('1314', '1415', '1516', '1617', '1718', '1819', '1920')
