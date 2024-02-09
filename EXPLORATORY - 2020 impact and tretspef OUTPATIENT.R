@@ -6,9 +6,8 @@
 
 #Created December 2023 by Lizzie Augarde 
 #Change log:
-#20/12/2023 added code to review treatment specialties among subsets 
-#of patients by tumour type. Limited to 2014 diagnoses based on 
-#2020 impact investigation work
+#20/12/2023 added code to review treatment specialties among subsets of patients by tumour type. Limited to 2014 diagnoses based on 2020 impact investigation work
+#07/02/2024 added code to extract just tumour-specialty combinations making up at least 1% of appts
 ############################################################### 
 
 #prep
@@ -189,5 +188,5 @@ tretspefs_by_tg <- los2014_op_events %>%
   group_by(site_icd10_o2_3char, tretspef) %>%
   summarise(total_appts = n())
 
-write.csv(tretspefs_by_tg, "N:/INFO/_LIVE/NCIN/Macmillan_Partnership/Length of Stay - 2023/Data/Tretspefs_by_tumour_group_full_cohort_20240202.csv")
+write.csv(tretspefs_by_tg, "N:/INFO/_LIVE/NCIN/Macmillan_Partnership/Length of Stay - 2023/Data/Tretspefs_by_tumour_group_full_cohort_20240207.csv")
 
