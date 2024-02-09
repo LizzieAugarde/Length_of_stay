@@ -181,8 +181,8 @@ length(which(los2014_apc_events$epi_length > los2014_apc_events_1920$surv_days_p
 
 #survival variables only data frame
 los2014_apc_patients_survival <- los2014_apc_events %>%
-  select(patientid, alive_3months, alive_6months, alive_12months, 
-         alive_2years, alive_3years, alive_4years, alive_5years) %>%
+  select(patientid, alive_3months, alive_6months, alive_12months, alive_1.5years, alive_2years, alive_2.5years, alive_3years, 
+         alive_3.5years, alive_4years, alive_4.5years, alive_5years) %>%
   unique()
 
 
@@ -199,8 +199,8 @@ los2014_apc_patient_agg <- los2014_apc_events %>%
             total_los_4years = sum(los_4years), total_los_4.5years = sum(los_4.5years), total_los_5years = sum(los_5years)) %>%
   
   #adding survival for each patient
-  left_join(select(los2014_apc_patients_survival, patientid, alive_3months, alive_6months, alive_12months, 
-                   alive_2years, alive_3years, alive_4years, alive_5years), by = "patientid")
+  left_join(select(los2014_apc_patients_survival, patientid, alive_3months, alive_6months, alive_12months, alive_1.5years, alive_2years, 
+                   alive_2.5years, alive_3years, alive_3.5years, alive_4years, alive_4.5years, alive_5years), by = "patientid")
 
 
 ##### WRITE OUT CLEANED PATIENT-LEVEL AGGREGATED APC DATA ##### 
