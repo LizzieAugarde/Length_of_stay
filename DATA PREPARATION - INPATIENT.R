@@ -1,7 +1,6 @@
 ###################### Length of stay 2023######################
 
-#Script to process HES data for 2014 diagnoses to 
-#assess the impact of 2020/2021 on length of stay
+#Script to process HES APC data for 2014 diagnoses into LOS data frame
 
 #Created November 2023 by Lizzie Augarde 
 #Change log:
