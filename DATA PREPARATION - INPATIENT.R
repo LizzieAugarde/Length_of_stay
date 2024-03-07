@@ -86,7 +86,7 @@ length(which(los2014_apc_events$cohort_check  == "FALSE")) #all patients in even
 los2014_apc_events <- los2014_apc_events %>%
   clean_names() %>%
   unique() %>% #removing duplicate events
-  select(-c(death_diag_comp, diag_epi_comp, fuend_epi_comp)) %>% #removing check variables
+  select(-c(death_diag_comp, diag_epi_comp, fuend_epi_comp, cohort_check)) %>% #removing check variables
   mutate(diag1_cancer = case_when(str_detect(diag_1, "C") ~ "Y", TRUE ~ "N")) %>%
   mutate(diag2_cancer = case_when(str_detect(diag_2, "C") ~ "Y", TRUE ~ "N")) %>%
   mutate(diag3_cancer = case_when(str_detect(diag_3, "C") ~ "Y", TRUE ~ "N")) %>%
@@ -176,11 +176,11 @@ los2014_apc_events <- los2014_apc_events %>%
          alive_5years = ifelse(surv_days_post_diag >= 1825 | is.na(surv_days_post_diag), "Yes", "No")) 
 
 #check for any stays longer than survival length (should have all been excluded earlier in script)
-length(which(los2014_apc_events$epi_length > los2014_apc_events_1920$surv_days_post_diag)) 
+length(which(los2014_apc_events$epi_length-1 > los2014_apc_events$surv_days_post_diag)) 
 
 #survival variables only data frame
 los2014_apc_patients_survival <- los2014_apc_events %>%
-  select(patientid, alive_3months, alive_6months, alive_12months, alive_1.5years, alive_2years, alive_2.5years, alive_3years, 
+  select(patientid, alive_3months, alive_6months, alive_9months, alive_12months, alive_1.5years, alive_2years, alive_2.5years, alive_3years, 
          alive_3.5years, alive_4years, alive_4.5years, alive_5years) %>%
   unique()
 
@@ -198,7 +198,7 @@ los2014_apc_patient_agg <- los2014_apc_events %>%
             total_los_4years = sum(los_4years), total_los_4.5years = sum(los_4.5years), total_los_5years = sum(los_5years)) %>%
   
   #adding survival for each patient
-  left_join(select(los2014_apc_patients_survival, patientid, alive_3months, alive_6months, alive_12months, alive_1.5years, alive_2years, 
+  left_join(select(los2014_apc_patients_survival, patientid, alive_3months, alive_6months, alive_9months, alive_12months, alive_1.5years, alive_2years, 
                    alive_2.5years, alive_3years, alive_3.5years, alive_4years, alive_4.5years, alive_5years), by = "patientid")
 
 

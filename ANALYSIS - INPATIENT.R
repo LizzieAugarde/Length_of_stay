@@ -35,9 +35,30 @@ cumulative_total_los <- los2014_apc_patient_agg %>%
 
 
 ##### ALTERNATIVE TOTAL LOS BY TIME PERIOD #####
-#apc episodes occurring between end of previous time period and end of current e.g. between 3 and 6 months
-alternative_total_los <- los2014_apc_patient_agg %>% 
+#appts occurring between end of previous time period and end of current e.g. between 3 and 6 months
+alternative_total_los <- cumulative_total_los %>% 
   mutate(time_period = factor(time_period, levels = periods_order)) %>%
   arrange(time_period) %>%
   mutate(los = c(cum_los[1], diff(cum_los))) %>%
   select(-cum_los)
+
+
+##### LOS PER PATIENT BY TIME PERIOD #####
+apc_los_per_patient <- left_join(alternative_total_los, cumulative_total_los, by = "time_period") %>%
+  left_join(., survival_cohorts, by = "time_period") %>%
+  select(-No) %>%
+  rename("patients_alive" = "Yes") %>%
+  phe_rate(., cum_los, patients_alive, type = "standard", confidence = 0.95, multiplier = 1) %>%
+  rename("rate_cum" = "value", "lowerci_ratecum" = "lowercl", "upperci_ratecum" = "uppercl") %>%
+  mutate(time_period = factor(time_period, levels = periods_order)) %>%
+  arrange(time_period) %>%
+  phe_rate(., los, patients_alive, type = "standard", confidence = 0.95, multiplier = 1) %>%
+  rename("rate" = "value", "lowerci_rate" = "lowercl", "upperci_rate" = "uppercl")
+
+apc_cum_los_per_patient_plot <- ggplot(apc_los_per_patient, aes(x = time_period, y = rate_cum, group = 1)) + 
+  geom_bar(stat = "identity")
+
+apc_los_per_patient_plot <-ggplot(apc_los_per_patient, aes(x = time_period, y = rate, group = 1)) + 
+  geom_bar(stat = "identity")
+
+write.csv(apc_los_per_patient, "N:/INFO/_LIVE/NCIN/Macmillan_Partnership/Length of Stay - 2023/Results/APC LOS per patient 20240307.csv")  
