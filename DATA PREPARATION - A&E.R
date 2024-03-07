@@ -96,12 +96,12 @@ write.csv(los2014_ae_events, "N:/INFO/_LIVE/NCIN/Macmillan_Partnership/Length of
 
 #survival variables only data frame
 los2014_ae_patients_survival <- los2014_ae_events %>%
-  select(patientid, alive_3months, alive_6months, alive_12months, 
-         alive_2years, alive_3years, alive_4years, alive_5years) %>%
+  select(patientid, alive_3months, alive_6months, alive_9months, alive_12months, alive_1.5years,
+         alive_2years, alive_2.5years, alive_3years, alive_3.5years, alive_4years, alive_4.5years, alive_5years) %>%
   unique()
 
 #aggregating number of attendances by time period for each patient
-los2014_ae_patient_agg_months <- los2014_ae_events %>%
+los2014_ae_patient_agg <- los2014_ae_events %>%
   mutate(attend_count = 1) %>%
   group_by(patientid) %>%
   summarize(att_3months = sum(att_3months), att_6months = sum(att_6months), att_9months = sum(att_9months), att_12months = sum(att_12months), 
@@ -109,11 +109,11 @@ los2014_ae_patient_agg_months <- los2014_ae_events %>%
             att_2.5years = sum(att_2.5years), att_3years = sum(att_3years),
             att_3.5years = sum(att_3.5years), att_4years = sum(att_4years),
             att_4.5years = sum(att_4.5years), att_5years = sum(att_5years)) %>%
-  left_join(select(los2014_ae_patients_survival, patientid, alive_3months, alive_6months, alive_12months, 
-                   alive_2years, alive_3years, alive_4years, alive_5years), by = "patientid")
+  left_join(select(los2014_ae_patients_survival, patientid, alive_3months, alive_6months, alive_9months, alive_12months, alive_1.5years,
+                   alive_2years, alive_2.5years, alive_3years, alive_3.5years, alive_4years, alive_4.5years, alive_5years), by = "patientid")
   
 #write out patient level aggregated A&E data
-write.csv(los2014_ae_patient_agg_months, "N:/INFO/_LIVE/NCIN/Macmillan_Partnership/Length of Stay - 2023/Data/Patient-level aggregated A&E data 20240122.csv")
+write.csv(los2014_ae_patient_agg, "N:/INFO/_LIVE/NCIN/Macmillan_Partnership/Length of Stay - 2023/Data/Patient-level aggregated A&E data 20240307.csv")
 
 
   
