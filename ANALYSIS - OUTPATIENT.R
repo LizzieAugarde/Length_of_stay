@@ -42,8 +42,8 @@ alternative_total_los <- cumulative_total_los %>%
 
 
 ##### APPOINTMENTS PER PATIENT BY TIME PERIOD #####
-los_per_patient <- left_join(alternative_total_los, cumulative_total_los, by = "time_period") %>%
-                   left_join(., survival_cohorts, by = "time_period") %>%
+op_los_per_patient <- left_join(alternative_total_los, cumulative_total_los, by = "time_period") %>%
+                      left_join(., survival_cohorts, by = "time_period") %>%
   select(-No) %>%
   rename("patients_alive" = "Yes") %>%
   phe_rate(., cum_los, patients_alive, type = "standard", confidence = 0.95, multiplier = 1) %>%
@@ -53,11 +53,11 @@ los_per_patient <- left_join(alternative_total_los, cumulative_total_los, by = "
   phe_rate(., los, patients_alive, type = "standard", confidence = 0.95, multiplier = 1) %>%
   rename("rate" = "value", "lowerci_rate" = "lowercl", "upperci_rate" = "uppercl")
 
-cum_los_per_patient_plot <- ggplot(los_per_patient, aes(x = time_period, y = rate_cum, group = 1)) + 
+op_cum_los_per_patient_plot <- ggplot(op_los_per_patient, aes(x = time_period, y = rate_cum, group = 1)) + 
   geom_bar(stat = "identity")
 
-los_per_patient_plot <-ggplot(los_per_patient, aes(x = time_period, y = rate, group = 1)) + 
+op_los_per_patient_plot <-ggplot(op_los_per_patient, aes(x = time_period, y = rate, group = 1)) + 
   geom_bar(stat = "identity")
 
-write.csv(los_per_patient, "N:/INFO/_LIVE/NCIN/Macmillan_Partnership/Length of Stay - 2023/Results/OP LOS per patient 20240307.csv")  
+write.csv(op_los_per_patient, "N:/INFO/_LIVE/NCIN/Macmillan_Partnership/Length of Stay - 2023/Results/OP LOS per patient 20240307.csv")  
          

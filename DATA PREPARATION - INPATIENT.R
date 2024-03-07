@@ -203,7 +203,7 @@ los2014_apc_patient_agg <- los2014_apc_events %>%
 
 
 ##### WRITE OUT CLEANED PATIENT-LEVEL AGGREGATED APC DATA ##### 
-write.csv(los2014_apc_patient_agg, "N:/INFO/_LIVE/NCIN/Macmillan_Partnership/Length of Stay - 2023/Data/Patient-level aggregated A&E data 20240209.csv")
+write.csv(los2014_apc_patient_agg, "N:/INFO/_LIVE/NCIN/Macmillan_Partnership/Length of Stay - 2023/Data/Patient-level aggregated APC data 20240209.csv")
 
 
   

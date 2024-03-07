@@ -112,8 +112,8 @@ write.csv(los2014_op_events, "N:/INFO/_LIVE/NCIN/Macmillan_Partnership/Length of
 
 #survival variables only data frame
 los2014_op_patients_survival <- los2014_op_events %>%
-  select(patientid, alive_3months, alive_6months, alive_12months, 
-         alive_2years, alive_3years, alive_4years, alive_5years) %>%
+  select(patientid, alive_3months, alive_6months, alive_9months, alive_12months, alive_1.5years,
+         alive_2years, alive_2.5years, alive_3years, alive_3.5years, alive_4years, alive_4.5years, alive_5years) %>%
   unique()
 
 #aggregating number of appointments by time period for each patient
@@ -124,8 +124,8 @@ los2014_op_patient_agg <- los2014_op_events %>%
             appt_2.5years = sum(appt_2.5years), appt_3years = sum(appt_3years),
             appt_3.5years = sum(appt_3.5years), appt_4years = sum(appt_4years),
             appt_4.5years = sum(appt_4.5years), appt_5years = sum(appt_5years)) %>%
-  left_join(select(los2014_op_patients_survival, patientid, alive_3months, alive_6months, alive_12months, 
-                   alive_2years, alive_3years, alive_4years, alive_5years), by = "patientid")
+  left_join(select(los2014_op_patients_survival, patientid, alive_3months, alive_6months, alive_9months, alive_12months, alive_1.5years,
+                   alive_2years, alive_2.5years, alive_3years, alive_3.5years, alive_4years, alive_4.5years, alive_5years), by = "patientid")
 
 #write out patient level aggregated OP data
 write.csv(los2014_op_patient_agg, "N:/INFO/_LIVE/NCIN/Macmillan_Partnership/Length of Stay - 2023/Data/Patient-level aggregated OP data 20240306.csv")
