@@ -44,5 +44,7 @@ los2014_cohort <- los2014_cohort %>%
 
 nrow(los2014_cohort[los2014_cohort$death_diag_comp < 1 & !is.na(los2014_cohort$death_diag_comp), ])
 
+los2014_cohort <- los2014_cohort %>% clean_names()
+
 
 
