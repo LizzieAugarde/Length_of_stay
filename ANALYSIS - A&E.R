@@ -56,7 +56,7 @@ ae_los_per_patient <- left_join(alternative_total_los, cumulative_total_los, by 
   rename("rate" = "value", "lowerci_rate" = "lowercl", "upperci_rate" = "uppercl")
 
 ae_cum_los_per_patient_plot <- ggplot(ae_los_per_patient, aes(x = time_period, y = rate_cum, group = 1)) + 
-  geom_bar(stat = "identity")
+  geom_bar(stat = "identity") 
 
 ae_los_per_patient_plot <-ggplot(ae_los_per_patient, aes(x = time_period, y = rate, group = 1)) + 
   geom_bar(stat = "identity")
