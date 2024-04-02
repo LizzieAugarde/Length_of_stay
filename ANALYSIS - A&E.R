@@ -73,11 +73,20 @@ ae_los_per_patient <- left_join(total_atts, survival_cohort, by = c("age_group",
 ae_los_per_patient <- ae_los_per_patient %>%
   phe_rate(., atts_in_period, number_alive_at_period_end, type = "standard", confidence = 0.95, multiplier = 1) %>%
   rename("rate" = "value")
-  
-ae_los_per_patient_plot <- ggplot(ae_los_per_patient, aes(x = period, y = rate, group = age_group)) + 
-  geom_bar(stat = "identity", position = "dodge", aes(fill = age_group)) + 
-  geom_errorbar(aes(ymin = lowercl, ymax = uppercl, group = age_group), position = "dodge", stat = "identity", linewidth = 0.1)
 
 write.csv(ae_los_per_patient, "N:/INFO/_LIVE/NCIN/Macmillan_Partnership/Length of Stay - 2023/Results/A&E LOS per patient by age 20240402.csv")  
+
+#plot
+ae_los_per_patient_plot <- ggplot(ae_los_per_patient, aes(x = period, y = rate, group = age_group)) + 
+  geom_bar(stat = "identity", position = "dodge", aes(fill = age_group)) + 
+  geom_errorbar(aes(ymin = lowercl, ymax = uppercl, group = age_group), position = "dodge", stat = "identity", linewidth = 0.1) +
+  geom_point(data = gen_pop_ae, aes(x = period, y = rate, fill = age_group), 
+             position = position_dodge(0.9), size = 2, shape = 21, color = "black", stroke = 1.5) +
+  scale_y_continuous(limits = c(0, 10), breaks = c(0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10)) +
+  labs(x = "Time post-diagnosis", y = "Attendances per patient", fill = "Age group",
+       caption = "Bars indicate attendances in those diagnosed with cancer in 2021. \nCircles indicate average attendances in the general population between 2013/14 and 2019/20",
+       title = "A&E attendances per patient in the cancer population and general population") +
+  theme(plot.caption = element_text(hjust = 0, size = 8),
+        plot.title = element_text(hjust = 0.5, size = 12, face = "bold"))
 
 
