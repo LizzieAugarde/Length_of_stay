@@ -11,8 +11,6 @@
 require(PHEindicatormethods)
 library(PHEindicatormethods)
 
-periods_order <- c("3months", "6months", "9months", "12months", "1.5years", "2years", "2.5years", "3years", "3.5years", "4years", "4.5years", "5years")
-
 ##### DENOMINATOR DATA FRAME - NUMBER OF PATIENTS ALIVE AT EACH TIME PERIOD ##### 
 survival_cohort_1yr <- los2014_ae_patient_agg %>% 
   select(patientid, age_1yr_postdiag, alive_12months) %>%
