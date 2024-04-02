@@ -48,7 +48,7 @@ los2014_ae_events <- los2014_ae_events_raw %>%
   mutate(diag_att_comp = interval(FOLLOW_UP_START, ARRIVALDATE) / days(1)) %>% 
   mutate(fuend_att_comp = interval(ARRIVALDATE, FOLLOW_UP_END) / days(1)) %>%
   mutate(PATIENTID = as.character(PATIENTID)) %>% 
-  #mutate(cohort_check = PATIENTID %in% los2014_cohort$PATIENTID) %>%
+  mutate(cohort_check = PATIENTID %in% los2014_cohort$PATIENTID) %>%
   filter(diag_att_comp >= 0) %>% #keeping only attendances occurring on or after diag date
   filter(fuend_att_comp >= 0) #keeping only attendances occurring on or before follow up end date
 
@@ -114,18 +114,25 @@ los2014_ae_patient_agg <- los2014_ae_events %>%
             att_4.5years = sum(att_4.5years), att_5years = sum(att_5years)) %>%
   left_join(select(los2014_ae_patients_survival, patientid, alive_3months, alive_6months, alive_9months, alive_12months, alive_1.5years,
                    alive_2years, alive_2.5years, alive_3years, alive_3.5years, alive_4years, alive_4.5years, alive_5years), by = "patientid")
-  
-#adding in DOB of each patient and ageing on for 1, 2 and 5 years post-diagnosis
+
+
+##### ADDING VARIABLES NEEDED FOR AGE BREAKDOWNS #####   
 los2014_ae_patient_agg <- los2014_ae_patient_agg %>%
   mutate(patientid = as.character(patientid)) %>%
+  
+  #adding in DOB and calculating age at diag
   left_join(select(los2014_cohort, patientid, diagnosisdatebest, birthdatebest), by = "patientid") %>%
   mutate(diag_age_days = difftime(as.Date(diagnosisdatebest), as.Date(birthdatebest), units = "days")) %>%
-  mutate(age_1yr_postdiag = as.numeric(diag_age_days + 365), 
+  
+  #ageing on for 1, 2 and 5 years post-diagnosis 
+  mutate(age_1yr_postdiag = as.numeric(diag_age_days + 365),
          age_2yrs_postdiag = as.numeric(diag_age_days + 730),
          age_5yrs_postdiag = as.numeric(diag_age_days + 1825)) %>%
   mutate(age_1yr_postdiag = floor(age_1yr_postdiag/365),
          age_2yrs_postdiag = floor(age_2yrs_postdiag/365),
          age_5yrs_postdiag = floor(age_5yrs_postdiag/365)) %>%
+  
+  #converting to age groups
   mutate(age_1yr_postdiag = case_when(age_1yr_postdiag < 10 ~ "0-9",
                                       age_1yr_postdiag < 20 & age_1yr_postdiag > 9 ~ "10-19",
                                       age_1yr_postdiag < 30 & age_1yr_postdiag > 19 ~ "20-29",
@@ -156,7 +163,7 @@ los2014_ae_patient_agg <- los2014_ae_patient_agg %>%
   select(-c(diagnosisdatebest, birthdatebest, diag_age_days))
 
 #write out patient level aggregated A&E data
-write.csv(los2014_ae_patient_agg, "N:/INFO/_LIVE/NCIN/Macmillan_Partnership/Length of Stay - 2023/Data/Patient-level aggregated A&E data 20240308.csv")
+write.csv(los2014_ae_patient_agg, "N:/INFO/_LIVE/NCIN/Macmillan_Partnership/Length of Stay - 2023/Data/Patient-level aggregated A&E data 20240402.csv")
 
 
   
