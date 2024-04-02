@@ -14,53 +14,70 @@ library(PHEindicatormethods)
 periods_order <- c("3months", "6months", "9months", "12months", "1.5years", "2years", "2.5years", "3years", "3.5years", "4years", "4.5years", "5years")
 
 ##### DENOMINATOR DATA FRAME - NUMBER OF PATIENTS ALIVE AT EACH TIME PERIOD ##### 
-survival_cohorts <- los2014_ae_patient_agg %>% 
-  select(-starts_with("att")) %>%
-  pivot_longer(-patientid, names_to = "time_period", values_to = "alive") %>%
-  group_by(time_period, alive) %>%
-  summarize(count = n()) %>%
-  pivot_wider(names_from = alive, values_from = count, values_fill = 0) %>%
-  mutate(time_period = sub(".*_", "", time_period)) 
+survival_cohort_1yr <- los2014_ae_patient_agg %>% 
+  select(patientid, age_1yr_postdiag, alive_12months) %>%
+  filter(alive_12months == "Yes") %>%
+  group_by(age_1yr_postdiag) %>%
+  summarize(number_alive_at_period_end = n()) %>%
+  rename("age_group" = "age_1yr_postdiag") %>%
+  mutate(period = "1 year")
+
+survival_cohort_2yrs <- los2014_ae_patient_agg %>% 
+  select(patientid, age_2yrs_postdiag, alive_2years) %>%
+  filter(alive_2years == "Yes") %>%
+  group_by(age_2yrs_postdiag) %>%
+  summarize(number_alive_at_period_end = n()) %>%
+  rename("age_group" = "age_2yrs_postdiag") %>%
+  mutate(period = "2 years")
+
+survival_cohort_5yrs <- los2014_ae_patient_agg %>% 
+  select(patientid, age_5yrs_postdiag, alive_5years) %>%
+  filter(alive_5years == "Yes") %>%
+  group_by(age_5yrs_postdiag) %>%
+  summarize(number_alive_at_period_end = n()) %>%
+  rename("age_group" = "age_5yrs_postdiag") %>%
+  mutate(period = "5 years")
+
+survival_cohort <- rbind(survival_cohort_1yr, survival_cohort_2yrs, survival_cohort_5yrs)
 
 
-##### CUMULATIVE TOTAL ATTENDANCES BY TIME PERIOD #####
+##### TOTAL ATTENDANCES BY TIME PERIOD #####
 #attends occurring from diag to end of current e.g. up to 6 months
-cumulative_total_los <- los2014_ae_patient_agg %>% 
-  select(-starts_with("alive")) %>%
-  pivot_longer(-patientid, names_to = "time_period", values_to = "cum_los") %>%
-  mutate(cum_los = ifelse(is.na(cum_los), 0, cum_los)) %>%
-  group_by(time_period) %>%
-  summarize(cum_los = sum(cum_los)) %>%
-  mutate(time_period = sub(".*_", "", time_period))
+total_atts_1yr <- los2014_ae_patient_agg %>% 
+  select(patientid, age_1yr_postdiag, att_12months) %>%
+  group_by(age_1yr_postdiag) %>%
+  summarize(atts_in_period = sum(att_12months)) %>%
+  rename("age_group" = "age_1yr_postdiag") %>%
+  mutate(period = "1 year")
 
+total_atts_2yrs <- los2014_ae_patient_agg %>% 
+  select(patientid, age_2yrs_postdiag, att_2years) %>%
+  group_by(age_2yrs_postdiag) %>%
+  summarize(atts_in_period = sum(att_2years)) %>%
+  rename("age_group" = "age_2yrs_postdiag") %>%
+  mutate(period = "2 years")
 
-##### ALTERNATIVE TOTAL ATTENDANCES BY TIME PERIOD #####
-#attends occurring between end of previous time period and end of current e.g. between 3 and 6 months
-alternative_total_los <- cumulative_total_los %>% 
-  mutate(time_period = factor(time_period, levels = periods_order)) %>%
-  arrange(time_period) %>%
-  mutate(los = c(cum_los[1], diff(cum_los))) %>%
-  select(-cum_los)
+total_atts_5yrs <- los2014_ae_patient_agg %>% 
+  select(patientid, age_5yrs_postdiag, att_5years) %>%
+  group_by(age_5yrs_postdiag) %>%
+  summarize(atts_in_period = sum(att_5years)) %>%
+  rename("age_group" = "age_5yrs_postdiag") %>%
+  mutate(period = "5 years")
+
+total_atts <- rbind(total_atts_1yr, total_atts_2yrs, total_atts_5yrs)
 
 
 ##### ATTENDANCES PER PATIENT BY TIME PERIOD #####
-ae_los_per_patient <- left_join(alternative_total_los, cumulative_total_los, by = "time_period") %>%
-  left_join(., survival_cohorts, by = "time_period") %>%
-  select(-No) %>%
-  rename("patients_alive" = "Yes") %>%
-  phe_rate(., cum_los, patients_alive, type = "standard", confidence = 0.95, multiplier = 1) %>%
-  rename("rate_cum" = "value", "lowerci_ratecum" = "lowercl", "upperci_ratecum" = "uppercl") %>%
-  mutate(time_period = factor(time_period, levels = periods_order)) %>%
-  arrange(time_period) %>%
-  phe_rate(., los, patients_alive, type = "standard", confidence = 0.95, multiplier = 1) %>%
-  rename("rate" = "value", "lowerci_rate" = "lowercl", "upperci_rate" = "uppercl")
+ae_los_per_patient <- left_join(total_atts, survival_cohort, by = c("age_group", "period"))
 
-ae_cum_los_per_patient_plot <- ggplot(ae_los_per_patient, aes(x = time_period, y = rate_cum, group = 1)) + 
-  geom_bar(stat = "identity") 
+ae_los_per_patient <- ae_los_per_patient %>%
+  phe_rate(., atts_in_period, number_alive_at_period_end, type = "standard", confidence = 0.95, multiplier = 1) %>%
+  rename("rate" = "value")
+  
+ae_los_per_patient_plot <- ggplot(ae_los_per_patient, aes(x = period, y = rate, group = age_group)) + 
+  geom_bar(stat = "identity", position = "dodge", aes(fill = age_group)) + 
+  geom_errorbar(aes(ymin = lowercl, ymax = uppercl, group = age_group), position = "dodge", stat = "identity", linewidth = 0.1)
 
-ae_los_per_patient_plot <-ggplot(ae_los_per_patient, aes(x = time_period, y = rate, group = 1)) + 
-  geom_bar(stat = "identity")
-
-write.csv(ae_los_per_patient, "N:/INFO/_LIVE/NCIN/Macmillan_Partnership/Length of Stay - 2023/Results/A&E LOS per patient 20240307.csv")  
+write.csv(ae_los_per_patient, "N:/INFO/_LIVE/NCIN/Macmillan_Partnership/Length of Stay - 2023/Results/A&E LOS per patient by age 20240402.csv")  
 
 
