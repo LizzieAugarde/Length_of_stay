@@ -208,17 +208,53 @@ los2014_apc_patient_agg <- los2014_apc_events %>%
   left_join(select(los2014_apc_patients_survival, patientid, alive_3months, alive_6months, alive_9months, alive_12months, alive_1.5years, alive_2years, 
                    alive_2.5years, alive_3years, alive_3.5years, alive_4years, alive_4.5years, alive_5years), by = "patientid")
 
-#adding in DOB of each patient and ageing on for 1, 2 and 5 years post-diagnosis
+
+##### ADDING VARIABLES NEEDED FOR AGE BREAKDOWNS #####   
 los2014_apc_patient_agg <- los2014_apc_patient_agg %>%
   mutate(patientid = as.character(patientid)) %>%
+  
+  #adding in DOB and calculating age at diag
   left_join(select(los2014_cohort, patientid, diagnosisdatebest, birthdatebest), by = "patientid") %>%
   mutate(diag_age_days = difftime(as.Date(diagnosisdatebest), as.Date(birthdatebest), units = "days")) %>%
-  mutate(age_1yr_postdiag = diag_age_days + 365, 
-         age_2yrs_postdiag = diag_age_days + 730,
-         age_5yrs_postdiag = diag_age_days + 1825) %>%
-  mutate(age_1yr_postdiag = round(age_1yr_postdiag/365, digits = 0),
-         age_2yrs_postdiag = round(age_2yrs_postdiag/365, digits = 0),
-         age_5yrs_postdiag = round(age_5yrs_postdiag/365, digits = 0))
+  
+  #ageing on for 1, 2 and 5 years post-diagnosis 
+  mutate(age_1yr_postdiag = as.numeric(diag_age_days + 365),
+         age_2yrs_postdiag = as.numeric(diag_age_days + 730),
+         age_5yrs_postdiag = as.numeric(diag_age_days + 1825)) %>%
+  mutate(age_1yr_postdiag = floor(age_1yr_postdiag/365),
+         age_2yrs_postdiag = floor(age_2yrs_postdiag/365),
+         age_5yrs_postdiag = floor(age_5yrs_postdiag/365)) %>%
+  
+  #converting to age groups
+  mutate(age_1yr_postdiag = case_when(age_1yr_postdiag < 10 ~ "0-9",
+                                      age_1yr_postdiag < 20 & age_1yr_postdiag > 9 ~ "10-19",
+                                      age_1yr_postdiag < 30 & age_1yr_postdiag > 19 ~ "20-29",
+                                      age_1yr_postdiag < 40 & age_1yr_postdiag > 29 ~ "30-39",
+                                      age_1yr_postdiag < 50 & age_1yr_postdiag > 39 ~ "40-49",
+                                      age_1yr_postdiag < 60 & age_1yr_postdiag > 49 ~ "50-59",
+                                      age_1yr_postdiag < 70 & age_1yr_postdiag > 59 ~ "60-69",
+                                      age_1yr_postdiag < 80 & age_1yr_postdiag > 69 ~ "70-79",
+                                      age_1yr_postdiag > 79 ~ "80+")) %>%
+  mutate(age_2yrs_postdiag = case_when(age_2yrs_postdiag < 10 ~ "0-9",
+                                       age_2yrs_postdiag < 20 & age_2yrs_postdiag > 9 ~ "10-19",
+                                       age_2yrs_postdiag < 30 & age_2yrs_postdiag > 19 ~ "20-29",
+                                       age_2yrs_postdiag < 40 & age_2yrs_postdiag > 29 ~ "30-39",
+                                       age_2yrs_postdiag < 50 & age_2yrs_postdiag > 39 ~ "40-49",
+                                       age_2yrs_postdiag < 60 & age_2yrs_postdiag > 49 ~ "50-59",
+                                       age_2yrs_postdiag < 70 & age_2yrs_postdiag > 59 ~ "60-69",
+                                       age_2yrs_postdiag < 80 & age_2yrs_postdiag > 69 ~ "70-79",
+                                       age_2yrs_postdiag > 79 ~ "80+")) %>%
+  mutate(age_5yrs_postdiag = case_when(age_5yrs_postdiag < 10 ~ "0-9",
+                                       age_5yrs_postdiag < 20 & age_5yrs_postdiag > 9 ~ "10-19",
+                                       age_5yrs_postdiag < 30 & age_5yrs_postdiag > 19 ~ "20-29",
+                                       age_5yrs_postdiag < 40 & age_5yrs_postdiag > 29 ~ "30-39",
+                                       age_5yrs_postdiag < 50 & age_5yrs_postdiag > 39 ~ "40-49",
+                                       age_5yrs_postdiag < 60 & age_5yrs_postdiag > 49 ~ "50-59",
+                                       age_5yrs_postdiag < 70 & age_5yrs_postdiag > 59 ~ "60-69",
+                                       age_5yrs_postdiag < 80 & age_5yrs_postdiag > 69 ~ "70-79",
+                                       age_5yrs_postdiag > 79 ~ "80+")) %>%
+  select(-c(diagnosisdatebest, birthdatebest, diag_age_days))
+
 
 ##### WRITE OUT CLEANED PATIENT-LEVEL AGGREGATED APC DATA ##### 
 write.csv(los2014_apc_patient_agg, "N:/INFO/_LIVE/NCIN/Macmillan_Partnership/Length of Stay - 2023/Data/Patient-level aggregated APC data 20240308.csv")
