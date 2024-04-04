@@ -142,7 +142,7 @@ apc_adms_per_patient_plot <- ggplot(apc_adms_per_patient, aes(x = period, y = ra
              position = position_dodge(0.9), size = 2, shape = 21, color = "black", stroke = 1.5) +
   #scale_y_continuous(limits = c(0, 10), breaks = c(0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10)) +
   labs(x = "Time post-diagnosis", y = "Admissions per patient", fill = "Age group",
-       caption = "Bars indicate all admissions in those diagnosed with cancer in 2021. \nCircles indicate average admissions in the general population between 2013/14 and 2019/20",
+       caption = "Bars indicate all admissions in those diagnosed with cancer in 2014. \nCircles indicate average admissions in the general population between 2013/14 and 2019/20",
        title = "All inpatient admissions attendances per patient in the cancer population and general population") +
   theme(plot.caption = element_text(hjust = 0, size = 8),
         plot.title = element_text(hjust = 0.5, size = 12, face = "bold"))
@@ -197,7 +197,7 @@ cr_apc_adms_per_patient_plot <- ggplot(cr_apc_adms_per_patient, aes(x = period, 
              position = position_dodge(0.9), size = 2, shape = 21, color = "black", stroke = 1.5) +
   scale_y_continuous(limits = c(0, 25), breaks = c(0,5,10,15,20,25)) +
   labs(x = "Time post-diagnosis", y = "Admissions per patient", fill = "Age group",
-       caption = "Bars indicate cancer-related admissions in those diagnosed with cancer in 2021. \nCircles indicate average admissions in the general population between 2013/14 and 2019/20",
+       caption = "Bars indicate cancer-related admissions in those diagnosed with cancer in 2014. \nCircles indicate average admissions in the general population between 2013/14 and 2019/20",
        title = "Cancer-related inpatient admissions attendances per patient\nin the cancer population and all admissions in the general population") +
   theme(plot.caption = element_text(hjust = 0, size = 8),
         plot.title = element_text(hjust = 0.5, size = 12, face = "bold"))
