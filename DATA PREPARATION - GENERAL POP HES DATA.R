@@ -58,10 +58,10 @@ write.xlsx(gen_pop_op, "N:/INFO/_LIVE/NCIN/Macmillan_Partnership/Length of Stay 
 write.xlsx(gen_pop_apc, "N:/INFO/_LIVE/NCIN/Macmillan_Partnership/Length of Stay - 2023/Data/General population rates 20240402.xlsx", sheetName = "Inpatient", append = TRUE)
 
 #creating repeating data frames to allow for overlaying on cancer population graphs
-gen_pop_ae <- gen_pop_ae[rep(seq_len(nrow(gen_pop_ae)), each = 3),]
-gen_pop_op <- gen_pop_op[rep(seq_len(nrow(gen_pop_op)), each = 3),]
-gen_pop_apc <- gen_pop_apc[rep(seq_len(nrow(gen_pop_apc)), each = 3),]
+gen_pop_ae <- gen_pop_ae[rep(seq_len(nrow(gen_pop_ae)), each = 12),]
+gen_pop_op <- gen_pop_op[rep(seq_len(nrow(gen_pop_op)), each = 12),]
+gen_pop_apc <- gen_pop_apc[rep(seq_len(nrow(gen_pop_apc)), each = 12),]
 
-gen_pop_ae$period <- rep(c("1 year", "2 years", "5 years"), times = 9)
-gen_pop_op$period <- rep(c("1 year", "2 years", "5 years"), times = 9)
-gen_pop_apc$period <- rep(c("1 year", "2 years", "5 years"), times = 9)
+gen_pop_ae$period <- rep(c("3months", "6months", "9months", "12months", "1.5years", "2years", "2.5years", "3years", "3.5years", "4years", "4.5years", "5years"), times = 9)
+gen_pop_op$period <- rep(c("3months", "6months", "9months", "12months", "1.5years", "2years", "2.5years", "3years", "3.5years", "4years", "4.5years", "5years"), times = 9)
+gen_pop_apc$period <- rep(c("3months", "6months", "9months", "12months", "1.5years", "2years", "2.5years", "3years", "3.5years", "4years", "4.5years", "5years"), times = 9)

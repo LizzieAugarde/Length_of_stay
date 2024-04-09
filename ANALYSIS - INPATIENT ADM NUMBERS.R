@@ -10,195 +10,191 @@
 
 #uses cleaned episode record-level APC data (line 196 in DATA PREPARATION - INPATIENT.R) and survival data frame 
 
-apc_adms_patient_agg <- los2014_apc_events %>%
-  group_by(patientid, episode_cancer_related) %>%
-  summarize(total_adms_12months = sum(ifelse(los_12months > 0, 1, 0)),
-            total_adms_2years = sum(ifelse(los_2years > 0, 1, 0)),
-            total_adms_5years = sum(ifelse(los_5years > 0, 1, 0))) %>%
+time_intervals <- c("3months", "6months", "9months", "12months", "1.5years", "2years", "2.5years", "3years", "3.5years", "4years", "4.5years", "5years")
+
+###########DATA PREP-----------
+apc_adms_patient_agg_cr <- los2014_apc_events %>%
+  filter(episode_cancer_related == "Y") %>%
+  group_by(patientid) %>%
+  
+  #cumulative total admissions
+  summarize(cum_total_adms_3months = sum(ifelse(los_3months > 0, 1, 0)), cum_total_adms_6months = sum(ifelse(los_6months > 0, 1, 0)),
+            cum_total_adms_9months = sum(ifelse(los_9months > 0, 1, 0)), cum_total_adms_12months = sum(ifelse(los_12months > 0, 1, 0)),
+            cum_total_adms_1.5years = sum(ifelse(los_1.5years > 0, 1, 0)), cum_total_adms_2years = sum(ifelse(los_2years > 0, 1, 0)),
+            cum_total_adms_2.5years = sum(ifelse(los_2.5years > 0, 1, 0)), cum_total_adms_3years = sum(ifelse(los_3years > 0, 1, 0)),
+            cum_total_adms_3.5years = sum(ifelse(los_3.5years > 0, 1, 0)), cum_total_adms_4years = sum(ifelse(los_4years > 0, 1, 0)),
+            cum_total_adms_4.5years = sum(ifelse(los_4.5years > 0, 1, 0)),cum_total_adms_5years = sum(ifelse(los_5years > 0, 1, 0)),
+            
+            #period-specific total admissions (i.e. admissions 6 months is those which occur between 3 and 6 months only)
+            ps_total_adms_3months = cum_total_adms_3months, ps_total_adms_6months = cum_total_adms_6months-cum_total_adms_3months, 
+            ps_total_adms_9months = cum_total_adms_9months-cum_total_adms_6months, ps_total_adms_12months = cum_total_adms_12months-cum_total_adms_9months, 
+            ps_total_adms_1.5years = cum_total_adms_1.5years-cum_total_adms_12months, ps_total_adms_2years = cum_total_adms_2years-cum_total_adms_1.5years, 
+            ps_total_adms_2.5years = cum_total_adms_2.5years-cum_total_adms_2years, ps_total_adms_3years = cum_total_adms_3years-cum_total_adms_2.5years, 
+            ps_total_adms_3.5years = cum_total_adms_3.5years-cum_total_adms_3years, ps_total_adms_4years = cum_total_adms_4years-cum_total_adms_3.5years, 
+            ps_total_adms_4.5years = cum_total_adms_4.5years-cum_total_adms_4years, ps_total_adms_5years = cum_total_adms_5years-cum_total_adms_4.5years) %>%
   
   #adding survival for each patient
   left_join(select(los2014_apc_patients_survival, patientid, alive_3months, alive_6months, alive_9months, alive_12months, alive_1.5years, alive_2years, 
                    alive_2.5years, alive_3years, alive_3.5years, alive_4years, alive_4.5years, alive_5years), by = "patientid")
 
 
+apc_adms_patient_agg_all <- los2014_apc_events %>%
+  group_by(patientid) %>%
+  
+  #cumulative total admissions
+  summarize(cum_total_adms_3months = sum(ifelse(los_3months > 0, 1, 0)), cum_total_adms_6months = sum(ifelse(los_6months > 0, 1, 0)),
+            cum_total_adms_9months = sum(ifelse(los_9months > 0, 1, 0)), cum_total_adms_12months = sum(ifelse(los_12months > 0, 1, 0)),
+            cum_total_adms_1.5years = sum(ifelse(los_1.5years > 0, 1, 0)), cum_total_adms_2years = sum(ifelse(los_2years > 0, 1, 0)),
+            cum_total_adms_2.5years = sum(ifelse(los_2.5years > 0, 1, 0)), cum_total_adms_3years = sum(ifelse(los_3years > 0, 1, 0)),
+            cum_total_adms_3.5years = sum(ifelse(los_3.5years > 0, 1, 0)), cum_total_adms_4years = sum(ifelse(los_4years > 0, 1, 0)),
+            cum_total_adms_4.5years = sum(ifelse(los_4.5years > 0, 1, 0)),cum_total_adms_5years = sum(ifelse(los_5years > 0, 1, 0)),
+            
+            #period-specific total admissions (i.e. admissions 6 months is those which occur between 3 and 6 months only)
+            ps_total_adms_3months = cum_total_adms_3months, ps_total_adms_6months = cum_total_adms_6months-cum_total_adms_3months, 
+            ps_total_adms_9months = cum_total_adms_9months-cum_total_adms_6months, ps_total_adms_12months = cum_total_adms_12months-cum_total_adms_9months, 
+            ps_total_adms_1.5years = cum_total_adms_1.5years-cum_total_adms_12months, ps_total_adms_2years = cum_total_adms_2years-cum_total_adms_1.5years, 
+            ps_total_adms_2.5years = cum_total_adms_2.5years-cum_total_adms_2years, ps_total_adms_3years = cum_total_adms_3years-cum_total_adms_2.5years, 
+            ps_total_adms_3.5years = cum_total_adms_3.5years-cum_total_adms_3years, ps_total_adms_4years = cum_total_adms_4years-cum_total_adms_3.5years, 
+            ps_total_adms_4.5years = cum_total_adms_4.5years-cum_total_adms_4years, ps_total_adms_5years = cum_total_adms_5years-cum_total_adms_4.5years) %>%
+  
+  #adding survival for each patient
+  left_join(select(los2014_apc_patients_survival, patientid, alive_3months, alive_6months, alive_9months, alive_12months, alive_1.5years, alive_2years, 
+                   alive_2.5years, alive_3years, alive_3.5years, alive_4years, alive_4.5years, alive_5years), by = "patientid")
+
+
+
 ##### ADDING VARIABLES NEEDED FOR AGE BREAKDOWNS #####   
-apc_adms_patient_agg <- apc_adms_patient_agg %>%
+apc_adms_patient_agg_cr <- apc_adms_patient_agg_cr %>%
   mutate(patientid = as.character(patientid)) %>%
+  left_join(., los2014_cohort_agevars, by = "patientid") 
+
+apc_adms_patient_agg_all <- apc_adms_patient_agg_all %>%
+  mutate(patientid = as.character(patientid)) %>%
+  left_join(., los2014_cohort_agevars, by = "patientid") 
+
+
+
+##### DENOMINATOR DATA FRAME - NUMBER OF PATIENTS ALIVE AT EACH TIME PERIOD ----------------
+#uses the all admissions data frame as denominator is the same for both 
+create_survival_cohort <- function(data, variable, alive_variable, period) {
+  data %>%
+    select(patientid, !!variable, !!alive_variable) %>%
+    filter(!!alive_variable == "Yes") %>%
+    group_by(!!variable) %>%
+    summarise(number_alive_at_period_end = n()) %>%
+    rename("age_group" := !!variable) %>%
+    mutate(period = period)
+} #creates data frame of patients alive by age group at end of a specified period
+
+survival_cohorts <- lapply(time_intervals, function(interval) {
+  age_variable <- sym(paste0("age_", interval, "_postdiag"))
+  alive_variable <- sym(paste0("alive_", interval))
+  period <- interval###will want to change this to something more readable eventually 
   
-  #adding in DOB and calculating age at diag
-  left_join(select(los2014_cohort, patientid, diagnosisdatebest, birthdatebest), by = "patientid") %>%
-  mutate(diag_age_days = difftime(as.Date(diagnosisdatebest), as.Date(birthdatebest), units = "days")) %>%
+  create_survival_cohort(apc_adms_patient_agg_all, age_variable, alive_variable, period)
+}) #runs create_survival_cohort across all time periods in a specified data frame
+
+names(survival_cohorts) <- paste0("survival_cohort_", time_intervals)
+list2env(survival_cohorts, envir = .GlobalEnv)
+rm(survival_cohorts)
+survival_cohort_objects <- ls(pattern = "^survival_cohort")
+survival_cohort_list <- mget(survival_cohort_objects)
+combined_survival_cohort <- do.call(rbind, survival_cohort_list)
+
+
+
+##### PERIOD-SPECIFIC ADMISSIONS #####
+#cancer-related admissions 
+create_ps_total_admissions <- function(data, age_variable, adms_variable, period) {
+  data %>%
+    mutate(!!adms_variable := ifelse(is.na(!!adms_variable), 0, !!adms_variable)) %>%
+    select(patientid, !!age_variable, !!adms_variable) %>%
+    group_by(!!age_variable) %>%
+    summarise(adms_in_period = sum(!!adms_variable)) %>%
+    rename("age_group" := !!age_variable) %>%
+    mutate(period = period)
+} #creates data frame of adms by age group in a specified period
+
+ps_total_admissions_cr <- lapply(time_intervals, function(interval) {
+  age_variable <- sym(paste0("age_", interval, "_postdiag"))
+  adms_variable <- sym(paste0("ps_total_adms_", interval))
+  period <- interval###will want to change this to something more readable eventually 
   
-  #ageing on for 1, 2 and 5 years post-diagnosis 
-  mutate(age_1yr_postdiag = as.numeric(diag_age_days + 365),
-         age_2yrs_postdiag = as.numeric(diag_age_days + 730),
-         age_5yrs_postdiag = as.numeric(diag_age_days + 1825)) %>%
-  mutate(age_1yr_postdiag = floor(age_1yr_postdiag/365),
-         age_2yrs_postdiag = floor(age_2yrs_postdiag/365),
-         age_5yrs_postdiag = floor(age_5yrs_postdiag/365)) %>%
+  create_ps_total_admissions(apc_adms_patient_agg_cr, age_variable, adms_variable, period)
+}) #runs create_ps_total_admissions across all time periods in a specified data frame
+
+names(ps_total_admissions_cr) <- paste0("ps_total_adms_cr", time_intervals)
+list2env(ps_total_admissions_cr, envir = .GlobalEnv)
+rm(ps_total_admissions_cr)
+ps_total_adms_cr_objects <- ls(pattern = "^ps_total_adms_cr")
+ps_total_adms_cr_list <- mget(ps_total_adms_cr_objects)
+combined_ps_total_adms_cr <- do.call(rbind, ps_total_adms_cr_list)
+
+
+#all admissions
+ps_total_admissions_all <- lapply(time_intervals, function(interval) {
+  age_variable <- sym(paste0("age_", interval, "_postdiag"))
+  adms_variable <- sym(paste0("ps_total_adms_", interval))
+  period <- interval###will want to change this to something more readable eventually 
   
-  #converting to age groups
-  mutate(age_1yr_postdiag = case_when(age_1yr_postdiag < 10 ~ "0-9",
-                                      age_1yr_postdiag < 20 & age_1yr_postdiag > 9 ~ "10-19",
-                                      age_1yr_postdiag < 30 & age_1yr_postdiag > 19 ~ "20-29",
-                                      age_1yr_postdiag < 40 & age_1yr_postdiag > 29 ~ "30-39",
-                                      age_1yr_postdiag < 50 & age_1yr_postdiag > 39 ~ "40-49",
-                                      age_1yr_postdiag < 60 & age_1yr_postdiag > 49 ~ "50-59",
-                                      age_1yr_postdiag < 70 & age_1yr_postdiag > 59 ~ "60-69",
-                                      age_1yr_postdiag < 80 & age_1yr_postdiag > 69 ~ "70-79",
-                                      age_1yr_postdiag > 79 ~ "80+")) %>%
-  mutate(age_2yrs_postdiag = case_when(age_2yrs_postdiag < 10 ~ "0-9",
-                                       age_2yrs_postdiag < 20 & age_2yrs_postdiag > 9 ~ "10-19",
-                                       age_2yrs_postdiag < 30 & age_2yrs_postdiag > 19 ~ "20-29",
-                                       age_2yrs_postdiag < 40 & age_2yrs_postdiag > 29 ~ "30-39",
-                                       age_2yrs_postdiag < 50 & age_2yrs_postdiag > 39 ~ "40-49",
-                                       age_2yrs_postdiag < 60 & age_2yrs_postdiag > 49 ~ "50-59",
-                                       age_2yrs_postdiag < 70 & age_2yrs_postdiag > 59 ~ "60-69",
-                                       age_2yrs_postdiag < 80 & age_2yrs_postdiag > 69 ~ "70-79",
-                                       age_2yrs_postdiag > 79 ~ "80+")) %>%
-  mutate(age_5yrs_postdiag = case_when(age_5yrs_postdiag < 10 ~ "0-9",
-                                       age_5yrs_postdiag < 20 & age_5yrs_postdiag > 9 ~ "10-19",
-                                       age_5yrs_postdiag < 30 & age_5yrs_postdiag > 19 ~ "20-29",
-                                       age_5yrs_postdiag < 40 & age_5yrs_postdiag > 29 ~ "30-39",
-                                       age_5yrs_postdiag < 50 & age_5yrs_postdiag > 39 ~ "40-49",
-                                       age_5yrs_postdiag < 60 & age_5yrs_postdiag > 49 ~ "50-59",
-                                       age_5yrs_postdiag < 70 & age_5yrs_postdiag > 59 ~ "60-69",
-                                       age_5yrs_postdiag < 80 & age_5yrs_postdiag > 69 ~ "70-79",
-                                       age_5yrs_postdiag > 79 ~ "80+")) %>%
-  select(-c(diagnosisdatebest, birthdatebest, diag_age_days))
+  create_ps_total_admissions(apc_adms_patient_agg_all, age_variable, adms_variable, period)
+})
+
+names(ps_total_admissions_all) <- paste0("ps_total_adms_all_", time_intervals)
+list2env(ps_total_admissions_all, envir = .GlobalEnv)
+rm(ps_total_admissions_all)
+ps_total_admissions_all_objects <- ls(pattern = "^ps_total_adms_all")
+ps_total_admissions_all_list <- mget(ps_total_admissions_all_objects)
+combined_ps_total_adms_all <- do.call(rbind, ps_total_admissions_all_list)
 
 
-##### DENOMINATOR DATA FRAME - NUMBER OF PATIENTS ALIVE AT EACH TIME PERIOD ##### 
-survival_cohort_1yr <- apc_adms_patient_agg %>% 
-  select(patientid, age_1yr_postdiag, alive_12months) %>%
-  filter(alive_12months == "Yes") %>%
-  group_by(age_1yr_postdiag) %>%
-  summarize(number_alive_at_period_end = n()) %>%
-  rename("age_group" = "age_1yr_postdiag") %>%
-  mutate(period = "1 year")
 
-survival_cohort_2yrs <- apc_adms_patient_agg %>% 
-  select(patientid, age_2yrs_postdiag, alive_2years) %>%
-  filter(alive_2years == "Yes") %>%
-  group_by(age_2yrs_postdiag) %>%
-  summarize(number_alive_at_period_end = n()) %>%
-  rename("age_group" = "age_2yrs_postdiag") %>%
-  mutate(period = "2 years")
+##### PERIOD-SPECIFIC ADMISSIONS PER PATIENT BY TIME PERIOD #####
+#cancer-related admissions 
+apc_adms_per_patient_cr <- left_join(combined_ps_total_adms_cr, combined_survival_cohort, by = c("age_group", "period"))
 
-survival_cohort_5yrs <- apc_adms_patient_agg %>% 
-  select(patientid, age_5yrs_postdiag, alive_5years) %>%
-  filter(alive_5years == "Yes") %>%
-  group_by(age_5yrs_postdiag) %>%
-  summarize(number_alive_at_period_end = n()) %>%
-  rename("age_group" = "age_5yrs_postdiag") %>%
-  mutate(period = "5 years")
-
-survival_cohort <- rbind(survival_cohort_1yr, survival_cohort_2yrs, survival_cohort_5yrs)
-
-
-##### TOTAL ADMISSIONS BY TIME PERIOD - ALL ADMISSIONS #####
-#admissions starting from diag to end of current e.g. up to 6 months
-total_adms_1yr <- apc_adms_patient_agg %>% 
-  mutate(total_adms_12months = ifelse(is.na(total_adms_12months), 0, total_adms_12months)) %>%
-  select(patientid, age_1yr_postdiag, total_adms_12months) %>%
-  group_by(age_1yr_postdiag) %>%
-  summarize(adms_in_period = sum(total_adms_12months)) %>%
-  rename("age_group" = "age_1yr_postdiag") %>%
-  mutate(period = "1 year")
-
-total_adms_2yrs <- apc_adms_patient_agg %>% 
-  select(patientid, age_2yrs_postdiag, total_adms_2years) %>%
-  mutate(total_adms_2years = ifelse(is.na(total_adms_2years), 0, total_adms_2years)) %>%
-  group_by(age_2yrs_postdiag) %>%
-  summarize(adms_in_period = sum(total_adms_2years)) %>%
-  rename("age_group" = "age_2yrs_postdiag") %>%
-  mutate(period = "2 years")
-
-total_adms_5yrs <- apc_adms_patient_agg %>% 
-  select(patientid, age_5yrs_postdiag, total_adms_5years) %>%
-  mutate(total_adms_5years = ifelse(is.na(total_adms_5years), 0, total_adms_5years)) %>%
-  group_by(age_5yrs_postdiag) %>%
-  summarize(adms_in_period = sum(total_adms_5years)) %>%
-  rename("age_group" = "age_5yrs_postdiag") %>%
-  mutate(period = "5 years")
-
-total_adms <- rbind(total_adms_1yr, total_adms_2yrs, total_adms_5yrs)
-
-
-##### ALL ADMISSIONS PER PATIENT BY TIME PERIOD #####
-apc_adms_per_patient <- left_join(total_adms, survival_cohort, by = c("age_group", "period"))
-
-apc_adms_per_patient <- apc_adms_per_patient %>%
+apc_adms_per_patient_cr <- apc_adms_per_patient_cr %>%
   phe_rate(., adms_in_period, number_alive_at_period_end, type = "standard", confidence = 0.95, multiplier = 1) %>%
-  rename("rate" = "value")
+  rename("rate" = "value") %>%
+  mutate(period = factor(period, levels = time_intervals))
 
-write.csv(apc_adms_per_patient, "N:/INFO/_LIVE/NCIN/Macmillan_Partnership/Length of Stay - 2023/Results/APC number admissions per patient by age 20240402.csv")  
+write.csv(apc_adms_per_patient_cr, "N:/INFO/_LIVE/NCIN/Macmillan_Partnership/Length of Stay - 2023/Results/APC number admissions CR per patient by age 20240409.csv")  
 
-#plot
-apc_adms_per_patient_plot <- ggplot(apc_adms_per_patient, aes(x = period, y = rate, group = age_group)) + 
+apc_adms_per_patient_plot_cr <- ggplot(apc_adms_per_patient_cr, aes(x = period, y = rate, group = age_group)) + 
+  geom_bar(stat = "identity", position = "dodge", aes(fill = age_group)) + 
+  geom_errorbar(aes(ymin = lowercl, ymax = uppercl, group = age_group), position = "dodge", stat = "identity", linewidth = 0.1) +
+  geom_point(data = gen_pop_apc, aes(x = period, y = rate, fill = age_group), 
+             position = position_dodge(0.9), size = 2, shape = 21, color = "black", stroke = 1.5) +
+  scale_y_continuous(limits = c(0, 12), breaks = c(0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12)) +
+  labs(x = "Time post-diagnosis", y = "Admissions per patient", fill = "Age group",
+       caption = "Bars indicate cancer-related period-specific admissions in those diagnosed with cancer in 2014, i.e. '6 months' refers to those occurring between 3 and 6 months post-diagnosis.
+       \nCircles indicate average admissions in the general population between 2013/14 and 2019/20",
+       title = "Cancer-related inpatient admissions per patient in the cancer population\nand all admissions in the general population") +
+  theme(plot.caption = element_text(hjust = 0, size = 8),
+        plot.title = element_text(hjust = 0.5, size = 12, face = "bold"))
+
+
+#all admissions 
+apc_adms_per_patient_all <- left_join(combined_ps_total_adms_all, combined_survival_cohort, by = c("age_group", "period"))
+
+apc_adms_per_patient_all <- apc_adms_per_patient_all %>%
+  phe_rate(., adms_in_period, number_alive_at_period_end, type = "standard", confidence = 0.95, multiplier = 1) %>%
+  rename("rate" = "value") %>%
+  mutate(period = factor(period, levels = time_intervals))
+
+write.csv(apc_adms_per_patient_all, "N:/INFO/_LIVE/NCIN/Macmillan_Partnership/Length of Stay - 2023/Results/APC number admissions all per patient by age 20240409.csv")  
+
+apc_adms_per_patient_plot_all <- ggplot(apc_adms_per_patient_all, aes(x = period, y = rate, group = age_group)) + 
   geom_bar(stat = "identity", position = "dodge", aes(fill = age_group)) + 
   geom_errorbar(aes(ymin = lowercl, ymax = uppercl, group = age_group), position = "dodge", stat = "identity", linewidth = 0.1) +
   geom_point(data = gen_pop_apc, aes(x = period, y = rate, fill = age_group), 
              position = position_dodge(0.9), size = 2, shape = 21, color = "black", stroke = 1.5) +
   #scale_y_continuous(limits = c(0, 10), breaks = c(0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10)) +
   labs(x = "Time post-diagnosis", y = "Admissions per patient", fill = "Age group",
-       caption = "Bars indicate all admissions in those diagnosed with cancer in 2014. \nCircles indicate average admissions in the general population between 2013/14 and 2019/20",
+       caption = "Bars indicate all period-specific admissions in those diagnosed with cancer in 2014, i.e. '6 months' refers to those occurring between 3 and 6 months post-diagnosis.
+       \nCircles indicate average admissions in the general population between 2013/14 and 2019/20",
        title = "All inpatient admissions attendances per patient in the cancer population and general population") +
   theme(plot.caption = element_text(hjust = 0, size = 8),
         plot.title = element_text(hjust = 0.5, size = 12, face = "bold"))
 
-
-##### TOTAL ADMISSIONS BY TIME PERIOD - CANCER-RELATED ADMISSIONS #####
-#admissions starting from diag to end of current e.g. up to 6 months
-total_adms_1yr_cr <- apc_adms_patient_agg %>% 
-  mutate(total_adms_12months = ifelse(is.na(total_adms_12months), 0, total_adms_12months)) %>%
-  filter(episode_cancer_related == "Y") %>%
-  select(patientid, age_1yr_postdiag, total_adms_12months) %>%
-  group_by(age_1yr_postdiag) %>%
-  summarize(adms_in_period = sum(total_adms_12months)) %>%
-  rename("age_group" = "age_1yr_postdiag") %>%
-  mutate(period = "1 year")
-
-total_adms_2yrs_cr <- apc_adms_patient_agg %>%
-  mutate(total_adms_2years = ifelse(is.na(total_adms_2years), 0, total_adms_2years)) %>%
-  filter(episode_cancer_related == "Y") %>%
-  select(patientid, age_2yrs_postdiag, total_adms_2years) %>%
-  group_by(age_2yrs_postdiag) %>%
-  summarize(adms_in_period = sum(total_adms_2years)) %>%
-  rename("age_group" = "age_2yrs_postdiag") %>%
-  mutate(period = "2 years")
-
-total_adms_5yrs_cr <- apc_adms_patient_agg %>% 
-  mutate(total_adms_5years = ifelse(is.na(total_adms_5years), 0, total_adms_5years)) %>%
-  filter(episode_cancer_related == "Y") %>%
-  select(patientid, age_5yrs_postdiag, total_adms_5years) %>%
-  group_by(age_5yrs_postdiag) %>%
-  summarize(adms_in_period = sum(total_adms_5years)) %>%
-  rename("age_group" = "age_5yrs_postdiag") %>%
-  mutate(period = "5 years")
-
-total_adms_cr <- rbind(total_adms_1yr_cr, total_adms_2yrs_cr, total_adms_5yrs_cr)
-
-
-##### ALL ADMISSIONS PER PATIENT BY TIME PERIOD #####
-cr_apc_adms_per_patient <- left_join(total_adms_cr, survival_cohort, by = c("age_group", "period"))
-
-cr_apc_adms_per_patient <- cr_apc_adms_per_patient %>%
-  phe_rate(., adms_in_period, number_alive_at_period_end, type = "standard", confidence = 0.95, multiplier = 1) %>%
-  rename("rate" = "value")
-
-write.csv(cr_apc_adms_per_patient, "N:/INFO/_LIVE/NCIN/Macmillan_Partnership/Length of Stay - 2023/Results/APC number CR admissions per patient by age 20240402.csv")  
-
-#plot
-cr_apc_adms_per_patient_plot <- ggplot(cr_apc_adms_per_patient, aes(x = period, y = rate, group = age_group)) + 
-  geom_bar(stat = "identity", position = "dodge", aes(fill = age_group)) + 
-  geom_errorbar(aes(ymin = lowercl, ymax = uppercl, group = age_group), position = "dodge", stat = "identity", linewidth = 0.1) +
-  geom_point(data = gen_pop_apc, aes(x = period, y = rate, fill = age_group), 
-             position = position_dodge(0.9), size = 2, shape = 21, color = "black", stroke = 1.5) +
-  scale_y_continuous(limits = c(0, 25), breaks = c(0,5,10,15,20,25)) +
-  labs(x = "Time post-diagnosis", y = "Admissions per patient", fill = "Age group",
-       caption = "Bars indicate cancer-related admissions in those diagnosed with cancer in 2014. \nCircles indicate average admissions in the general population between 2013/14 and 2019/20",
-       title = "Cancer-related inpatient admissions attendances per patient\nin the cancer population and all admissions in the general population") +
-  theme(plot.caption = element_text(hjust = 0, size = 8),
-        plot.title = element_text(hjust = 0.5, size = 12, face = "bold"))
 
