@@ -107,11 +107,22 @@ los2014_ae_patients_survival <- los2014_ae_events %>%
 los2014_ae_patient_agg <- los2014_ae_events %>%
   mutate(attend_count = 1) %>%
   group_by(patientid) %>%
-  summarize(att_3months = sum(att_3months), att_6months = sum(att_6months), att_9months = sum(att_9months), att_12months = sum(att_12months), 
-            att_1.5years = sum(att_1.5years), att_2years = sum(att_2years), 
-            att_2.5years = sum(att_2.5years), att_3years = sum(att_3years),
-            att_3.5years = sum(att_3.5years), att_4years = sum(att_4years),
-            att_4.5years = sum(att_4.5years), att_5years = sum(att_5years)) %>%
+  
+  #cumulative total attendances
+  summarize(cum_att_3months = sum(att_3months), cum_att_6months = sum(att_6months), cum_att_9months = sum(att_9months), cum_att_12months = sum(att_12months), 
+            cum_att_1.5years = sum(att_1.5years), cum_att_2years = sum(att_2years), 
+            cum_att_2.5years = sum(att_2.5years), cum_att_3years = sum(att_3years),
+            cum_att_3.5years = sum(att_3.5years), cum_att_4years = sum(att_4years),
+            cum_att_4.5years = sum(att_4.5years), cum_att_5years = sum(att_5years),
+            
+            #period-specific total attendances (i.e. att 6 months is attendances which occur between 3 and 6 months only)
+            ps_att_3months = cum_att_3months, ps_att_6months = cum_att_6months-cum_att_3months, 
+            ps_att_9months = cum_att_9months-cum_att_6months, ps_att_12months = cum_att_12months-cum_att_9months, 
+            ps_att_1.5years = cum_att_1.5years-cum_att_12months, ps_att_2years = cum_att_2years-cum_att_1.5years, 
+            ps_att_2.5years = cum_att_2.5years-cum_att_2years, ps_att_3years = cum_att_3years-cum_att_2.5years, 
+            ps_att_3.5years = cum_att_3.5years-cum_att_3years, ps_att_4years = cum_att_4years-cum_att_3.5years, 
+            ps_att_4.5years = cum_att_4.5years-cum_att_4years, ps_att_5years = cum_att_5years-cum_att_4.5years) %>%
+  
   left_join(select(los2014_ae_patients_survival, patientid, alive_3months, alive_6months, alive_9months, alive_12months, alive_1.5years,
                    alive_2years, alive_2.5years, alive_3years, alive_3.5years, alive_4years, alive_4.5years, alive_5years), by = "patientid")
 
@@ -119,51 +130,10 @@ los2014_ae_patient_agg <- los2014_ae_events %>%
 ##### ADDING VARIABLES NEEDED FOR AGE BREAKDOWNS #####   
 los2014_ae_patient_agg <- los2014_ae_patient_agg %>%
   mutate(patientid = as.character(patientid)) %>%
-  
-  #adding in DOB and calculating age at diag
-  left_join(select(los2014_cohort, patientid, diagnosisdatebest, birthdatebest), by = "patientid") %>%
-  mutate(diag_age_days = difftime(as.Date(diagnosisdatebest), as.Date(birthdatebest), units = "days")) %>%
-  
-  #ageing on for 1, 2 and 5 years post-diagnosis 
-  mutate(age_1yr_postdiag = as.numeric(diag_age_days + 365),
-         age_2yrs_postdiag = as.numeric(diag_age_days + 730),
-         age_5yrs_postdiag = as.numeric(diag_age_days + 1825)) %>%
-  mutate(age_1yr_postdiag = floor(age_1yr_postdiag/365),
-         age_2yrs_postdiag = floor(age_2yrs_postdiag/365),
-         age_5yrs_postdiag = floor(age_5yrs_postdiag/365)) %>%
-  
-  #converting to age groups
-  mutate(age_1yr_postdiag = case_when(age_1yr_postdiag < 10 ~ "0-9",
-                                      age_1yr_postdiag < 20 & age_1yr_postdiag > 9 ~ "10-19",
-                                      age_1yr_postdiag < 30 & age_1yr_postdiag > 19 ~ "20-29",
-                                      age_1yr_postdiag < 40 & age_1yr_postdiag > 29 ~ "30-39",
-                                      age_1yr_postdiag < 50 & age_1yr_postdiag > 39 ~ "40-49",
-                                      age_1yr_postdiag < 60 & age_1yr_postdiag > 49 ~ "50-59",
-                                      age_1yr_postdiag < 70 & age_1yr_postdiag > 59 ~ "60-69",
-                                      age_1yr_postdiag < 80 & age_1yr_postdiag > 69 ~ "70-79",
-                                      age_1yr_postdiag > 79 ~ "80+")) %>%
-  mutate(age_2yrs_postdiag = case_when(age_2yrs_postdiag < 10 ~ "0-9",
-                                      age_2yrs_postdiag < 20 & age_2yrs_postdiag > 9 ~ "10-19",
-                                      age_2yrs_postdiag < 30 & age_2yrs_postdiag > 19 ~ "20-29",
-                                      age_2yrs_postdiag < 40 & age_2yrs_postdiag > 29 ~ "30-39",
-                                      age_2yrs_postdiag < 50 & age_2yrs_postdiag > 39 ~ "40-49",
-                                      age_2yrs_postdiag < 60 & age_2yrs_postdiag > 49 ~ "50-59",
-                                      age_2yrs_postdiag < 70 & age_2yrs_postdiag > 59 ~ "60-69",
-                                      age_2yrs_postdiag < 80 & age_2yrs_postdiag > 69 ~ "70-79",
-                                      age_2yrs_postdiag > 79 ~ "80+")) %>%
-  mutate(age_5yrs_postdiag = case_when(age_5yrs_postdiag < 10 ~ "0-9",
-                                      age_5yrs_postdiag < 20 & age_5yrs_postdiag > 9 ~ "10-19",
-                                      age_5yrs_postdiag < 30 & age_5yrs_postdiag > 19 ~ "20-29",
-                                      age_5yrs_postdiag < 40 & age_5yrs_postdiag > 29 ~ "30-39",
-                                      age_5yrs_postdiag < 50 & age_5yrs_postdiag > 39 ~ "40-49",
-                                      age_5yrs_postdiag < 60 & age_5yrs_postdiag > 49 ~ "50-59",
-                                      age_5yrs_postdiag < 70 & age_5yrs_postdiag > 59 ~ "60-69",
-                                      age_5yrs_postdiag < 80 & age_5yrs_postdiag > 69 ~ "70-79",
-                                      age_5yrs_postdiag > 79 ~ "80+")) %>%
-  select(-c(diagnosisdatebest, birthdatebest, diag_age_days))
+  left_join(., los2014_cohort_agevars, by = "patientid") 
 
 #write out patient level aggregated A&E data
-write.csv(los2014_ae_patient_agg, "N:/INFO/_LIVE/NCIN/Macmillan_Partnership/Length of Stay - 2023/Data/Patient-level aggregated A&E data 20240402.csv")
+write.csv(los2014_ae_patient_agg, "N:/INFO/_LIVE/NCIN/Macmillan_Partnership/Length of Stay - 2023/Data/Patient-level aggregated A&E data 20240409.csv")
 
 
   

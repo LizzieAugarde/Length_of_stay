@@ -107,7 +107,7 @@ los2014_op_events <- los2014_op_events %>%
          alive_5years = ifelse(surv_days_post_diag >= 1825 | is.na(surv_days_post_diag), "Yes", "No"))
 
 #write out record level OP appointment data
-write.csv(los2014_op_events, "N:/INFO/_LIVE/NCIN/Macmillan_Partnership/Length of Stay - 2023/Data/Appointment record-level cleaned OP data 20240404.csv")
+write.csv(los2014_op_events, "N:/INFO/_LIVE/NCIN/Macmillan_Partnership/Length of Stay - 2023/Data/Appointment record-level cleaned OP data 20240409.csv")
 
 #survival variables only data frame
 los2014_op_patients_survival <- los2014_op_events %>%
@@ -118,11 +118,21 @@ los2014_op_patients_survival <- los2014_op_events %>%
 
 ##### TOTAL LENGTH OF STAY PER PATIENT PER TIME PERIOD ##### 
 los2014_op_patient_agg <- los2014_op_events %>%
-  group_by(patientid) %>%
-  summarize(total_appt_3months = sum(appt_3months), total_appt_6months = sum(appt_6months), total_appt_9months = sum(appt_9months), 
-            total_appt_12months = sum(appt_12months), total_appt_1.5years = sum(appt_1.5years), total_appt_2years = sum(appt_2years), 
-            total_appt_2.5years = sum(appt_2.5years), total_appt_3years = sum(appt_3years), total_appt_3.5years = sum(appt_3.5years), 
-            total_appt_4years = sum(appt_4years), total_appt_4.5years = sum(appt_4.5years), total_appt_5years = sum(appt_5years)) %>%
+  group_by(patientid) %>%  
+  
+  #cumulative total attendances
+  summarize(cum_total_appt_3months = sum(appt_3months), cum_total_appt_6months = sum(appt_6months), cum_total_appt_9months = sum(appt_9months), 
+            cum_total_appt_12months = sum(appt_12months), cum_total_appt_1.5years = sum(appt_1.5years), cum_total_appt_2years = sum(appt_2years), 
+            cum_total_appt_2.5years = sum(appt_2.5years), cum_total_appt_3years = sum(appt_3years), cum_total_appt_3.5years = sum(appt_3.5years), 
+            cum_total_appt_4years = sum(appt_4years), cum_total_appt_4.5years = sum(appt_4.5years), cum_total_appt_5years = sum(appt_5years),
+
+            #period-specific total attendances (i.e. att 6 months is attendances which occur between 3 and 6 months only)
+            ps_total_appt_3months = cum_total_appt_3months, ps_total_appt_6months = cum_total_appt_6months-cum_total_appt_3months, 
+            ps_total_appt_9months = cum_total_appt_9months-cum_total_appt_6months, ps_total_appt_12months = cum_total_appt_12months-cum_total_appt_9months, 
+            ps_total_appt_1.5years = cum_total_appt_1.5years-cum_total_appt_12months, ps_total_appt_2years = cum_total_appt_2years-cum_total_appt_1.5years, 
+            ps_total_appt_2.5years = cum_total_appt_2.5years-cum_total_appt_2years, ps_total_appt_3years = cum_total_appt_3years-cum_total_appt_2.5years, 
+            ps_total_appt_3.5years = cum_total_appt_3.5years-cum_total_appt_3years, ps_total_appt_4years = cum_total_appt_4years-cum_total_appt_3.5years, 
+            ps_total_appt_4.5years = cum_total_appt_4.5years-cum_total_appt_4years, ps_total_appt_5years = cum_total_appt_5years-cum_total_appt_4.5years) %>%
   
   #adding survival for each patient
   left_join(select(los2014_op_patients_survival, patientid, alive_3months, alive_6months, alive_9months, alive_12months, alive_1.5years, alive_2years, 
@@ -132,49 +142,8 @@ los2014_op_patient_agg <- los2014_op_events %>%
 ##### ADDING VARIABLES NEEDED FOR AGE BREAKDOWNS #####   
 los2014_op_patient_agg <- los2014_op_patient_agg %>%
   mutate(patientid = as.character(patientid)) %>%
+  left_join(., los2014_cohort_agevars, by = "patientid") 
   
-  #adding in DOB and calculating age at diag
-  left_join(select(los2014_cohort, patientid, diagnosisdatebest, birthdatebest), by = "patientid") %>%
-  mutate(diag_age_days = difftime(as.Date(diagnosisdatebest), as.Date(birthdatebest), units = "days")) %>%
-  
-  #ageing on for 1, 2 and 5 years post-diagnosis 
-  mutate(age_1yr_postdiag = as.numeric(diag_age_days + 365),
-         age_2yrs_postdiag = as.numeric(diag_age_days + 730),
-         age_5yrs_postdiag = as.numeric(diag_age_days + 1825)) %>%
-  mutate(age_1yr_postdiag = floor(age_1yr_postdiag/365),
-         age_2yrs_postdiag = floor(age_2yrs_postdiag/365),
-         age_5yrs_postdiag = floor(age_5yrs_postdiag/365)) %>%
-  
-  #converting to age groups
-  mutate(age_1yr_postdiag = case_when(age_1yr_postdiag < 10 ~ "0-9",
-                                      age_1yr_postdiag < 20 & age_1yr_postdiag > 9 ~ "10-19",
-                                      age_1yr_postdiag < 30 & age_1yr_postdiag > 19 ~ "20-29",
-                                      age_1yr_postdiag < 40 & age_1yr_postdiag > 29 ~ "30-39",
-                                      age_1yr_postdiag < 50 & age_1yr_postdiag > 39 ~ "40-49",
-                                      age_1yr_postdiag < 60 & age_1yr_postdiag > 49 ~ "50-59",
-                                      age_1yr_postdiag < 70 & age_1yr_postdiag > 59 ~ "60-69",
-                                      age_1yr_postdiag < 80 & age_1yr_postdiag > 69 ~ "70-79",
-                                      age_1yr_postdiag > 79 ~ "80+")) %>%
-  mutate(age_2yrs_postdiag = case_when(age_2yrs_postdiag < 10 ~ "0-9",
-                                       age_2yrs_postdiag < 20 & age_2yrs_postdiag > 9 ~ "10-19",
-                                       age_2yrs_postdiag < 30 & age_2yrs_postdiag > 19 ~ "20-29",
-                                       age_2yrs_postdiag < 40 & age_2yrs_postdiag > 29 ~ "30-39",
-                                       age_2yrs_postdiag < 50 & age_2yrs_postdiag > 39 ~ "40-49",
-                                       age_2yrs_postdiag < 60 & age_2yrs_postdiag > 49 ~ "50-59",
-                                       age_2yrs_postdiag < 70 & age_2yrs_postdiag > 59 ~ "60-69",
-                                       age_2yrs_postdiag < 80 & age_2yrs_postdiag > 69 ~ "70-79",
-                                       age_2yrs_postdiag > 79 ~ "80+")) %>%
-  mutate(age_5yrs_postdiag = case_when(age_5yrs_postdiag < 10 ~ "0-9",
-                                       age_5yrs_postdiag < 20 & age_5yrs_postdiag > 9 ~ "10-19",
-                                       age_5yrs_postdiag < 30 & age_5yrs_postdiag > 19 ~ "20-29",
-                                       age_5yrs_postdiag < 40 & age_5yrs_postdiag > 29 ~ "30-39",
-                                       age_5yrs_postdiag < 50 & age_5yrs_postdiag > 39 ~ "40-49",
-                                       age_5yrs_postdiag < 60 & age_5yrs_postdiag > 49 ~ "50-59",
-                                       age_5yrs_postdiag < 70 & age_5yrs_postdiag > 59 ~ "60-69",
-                                       age_5yrs_postdiag < 80 & age_5yrs_postdiag > 69 ~ "70-79",
-                                       age_5yrs_postdiag > 79 ~ "80+")) %>%
-  select(-c(diagnosisdatebest, birthdatebest, diag_age_days))
-
 #write out patient level aggregated OP data
-write.csv(los2014_op_patient_agg, "N:/INFO/_LIVE/NCIN/Macmillan_Partnership/Length of Stay - 2023/Data/Patient-level aggregated OP data 20240404.csv")
+write.csv(los2014_op_patient_agg, "N:/INFO/_LIVE/NCIN/Macmillan_Partnership/Length of Stay - 2023/Data/Patient-level aggregated OP data 20240409.csv")
 

@@ -191,9 +191,6 @@ rm(cum_total_admissions_all)
 cum_total_admissions_all_objects <- ls(pattern = "^cum_total_adms_all")
 cum_total_admissions_all_list <- mget(cum_total_admissions_all_objects)
 combined_cum_total_adms_all <- do.call(rbind, cum_total_admissions_all_list)
-
-
-
 ##### PERIOD-SPECIFIC ADMISSIONS PER PATIENT BY TIME PERIOD #####
 #cancer-related admissions 
 apc_adms_per_patient_cr <- left_join(combined_ps_total_adms_cr, combined_survival_cohort, by = c("age_group", "period"))
@@ -244,9 +241,6 @@ apc_adms_per_patient_plot_all <- ggplot(apc_adms_per_patient_all, aes(x = period
 
 
 
-
-
-
 ##### CUMULATIVE ADMISSIONS PER PATIENT BY TIME PERIOD #####
 #cancer-related admissions 
 apc_adms_per_patient_cr <- left_join(combined_cum_total_adms_cr, combined_survival_cohort, by = c("age_group", "period"))
@@ -263,7 +257,7 @@ apc_adms_per_patient_plot_cr <- ggplot(apc_adms_per_patient_cr, aes(x = period, 
   geom_errorbar(aes(ymin = lowercl, ymax = uppercl, group = age_group), position = "dodge", stat = "identity", linewidth = 0.1) +
   geom_point(data = gen_pop_apc, aes(x = period, y = rate, fill = age_group), 
              position = position_dodge(0.9), size = 2, shape = 21, color = "black", stroke = 1.5) +
-  scale_y_continuous(limits = c(0, 12), breaks = c(0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12)) +
+  #scale_y_continuous(limits = c(0, 12), breaks = c(0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12)) +
   labs(x = "Time post-diagnosis", y = "Admissions per patient", fill = "Age group",
        caption = "Bars indicate cancer-related cumulative admissions in those diagnosed with cancer in 2014, i.e. '6 months' refers to all those occurring within 6 months post-diagnosis.
        \nCircles indicate average admissions in the general population between 2013/14 and 2019/20",

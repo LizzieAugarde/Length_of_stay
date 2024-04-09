@@ -19,7 +19,7 @@ casref01 <- createConnection()
 #extract
 los2014_cohort <- dbGetQueryOracle(casref01, "SELECT * FROM LOS2014_COHORT", rowlimit = NA)
 
-#checking for duplicates/multiple tumours
+#checking for duplicates/multiple tumours ######
 nrow(los2014_cohort[duplicated(los2014_cohort), ])
 n_distinct(los2014_cohort$PATIENTID)
 
@@ -44,10 +44,10 @@ los2014_cohort <- los2014_cohort %>%
 
 nrow(los2014_cohort[los2014_cohort$death_diag_comp < 1 & !is.na(los2014_cohort$death_diag_comp), ])
 
+
+##### CREATING AGE VARIABLES ########
 los2014_cohort <- los2014_cohort %>% clean_names()
 
-
-##### CREATING AGE VARIABLES 
 los2014_cohort_agevars <- los2014_cohort %>%
   mutate(patientid = as.character(patientid)) %>%
   select(c(patientid, diagnosisdatebest, birthdatebest)) %>%
