@@ -73,7 +73,7 @@ los2014_apc_events <- los2014_apc_events %>%
   mutate(death_diag_comp = interval(FOLLOW_UP_START, DEATHDATEBEST) / days(1)) %>%
   mutate(diag_epi_comp = interval(FOLLOW_UP_START, ADMIDATE) / days(1)) %>% 
   mutate(fuend_epi_comp = interval(ADMIDATE, FOLLOW_UP_END) / days(1)) %>%
-  #mutate(cohort_check = ifelse(PATIENTID %in% los2014_cohort$PATIENTID, "TRUE", "FALSE")) %>%
+  mutate(cohort_check = ifelse(PATIENTID %in% los2014_cohort$PATIENTID, "TRUE", "FALSE")) %>%
   filter(diag_epi_comp >= 0) %>% #keeping only episodes starting on or after diag date
   filter(fuend_epi_comp >= 0) #keeping only episodes starting on or before follow up end date
 
@@ -126,15 +126,15 @@ los2014_apc_events <- los2014_apc_events %>%
   #set up dates for time periods for each patient 
   mutate(fus_plus3months  = as.Date(follow_up_start) + 92,
          fus_plus6months  = as.Date(follow_up_start) + 182,
-         fus_plus9months  = as.Date(follow_up_start) + 273,
+         fus_plus9months  = as.Date(follow_up_start) + 274,
          fus_plus12months = as.Date(follow_up_start) + 365,
-         fus_plus1.5years = as.Date(follow_up_start) + 549,
+         fus_plus1.5years = as.Date(follow_up_start) + 548,
          fus_plus2years   = as.Date(follow_up_start) + 730,
          fus_plus2.5years = as.Date(follow_up_start) + 913,
          fus_plus3years   = as.Date(follow_up_start) + 1095,
          fus_plus3.5years = as.Date(follow_up_start) + 1278,
          fus_plus4years   = as.Date(follow_up_start) + 1460,
-         fus_plus4.5years = as.Date(follow_up_start) + 1642,
+         fus_plus4.5years = as.Date(follow_up_start) + 1643,
          fus_plus5years   = as.Date(follow_up_start) + 1825) %>%
   
   #set up time difference variables - time between admission and each follow up date 
@@ -171,7 +171,7 @@ los2014_apc_events <- los2014_apc_events %>%
   mutate(surv_days_post_diag = difftime(as.Date(deathdatebest), as.Date(follow_up_start), units = "days")) %>%
   mutate(alive_3months = ifelse(surv_days_post_diag >= 92 | is.na(surv_days_post_diag), "Yes", "No"), #marking those who die within 3 months of diagnosis with "No"
          alive_6months = ifelse(surv_days_post_diag >= 182 | is.na(surv_days_post_diag), "Yes", "No"),
-         alive_9months = ifelse(surv_days_post_diag >= 273 | is.na(surv_days_post_diag), "Yes", "No"),
+         alive_9months = ifelse(surv_days_post_diag >= 274 | is.na(surv_days_post_diag), "Yes", "No"),
          alive_12months = ifelse(surv_days_post_diag >= 365 | is.na(surv_days_post_diag), "Yes", "No"),
          alive_1.5years = ifelse(surv_days_post_diag >= 549 | is.na(surv_days_post_diag), "Yes", "No"),
          alive_2years = ifelse(surv_days_post_diag >= 730 | is.na(surv_days_post_diag), "Yes", "No"),
@@ -179,7 +179,7 @@ los2014_apc_events <- los2014_apc_events %>%
          alive_3years = ifelse(surv_days_post_diag >= 1095 | is.na(surv_days_post_diag), "Yes", "No"),
          alive_3.5years = ifelse(surv_days_post_diag >= 1278 | is.na(surv_days_post_diag), "Yes", "No"),
          alive_4years = ifelse(surv_days_post_diag >= 1460 | is.na(surv_days_post_diag), "Yes", "No"),
-         alive_4.5years = ifelse(surv_days_post_diag >= 1642 | is.na(surv_days_post_diag), "Yes", "No"),
+         alive_4.5years = ifelse(surv_days_post_diag >= 1643 | is.na(surv_days_post_diag), "Yes", "No"),
          alive_5years = ifelse(surv_days_post_diag >= 1825 | is.na(surv_days_post_diag), "Yes", "No")) 
 
 #check for any stays longer than survival length (should have all been excluded earlier in script)
@@ -197,12 +197,45 @@ write.csv(los2014_apc_events, "N:/INFO/_LIVE/NCIN/Macmillan_Partnership/Length o
 
 
 ##### TOTAL LENGTH OF STAY PER PATIENT PER TIME PERIOD ##### 
-los2014_apc_patient_agg <- los2014_apc_events %>%
-  group_by(patientid, episode_cancer_related) %>%
-  summarize(total_los_3months = sum(los_3months), total_los_6months = sum(los_6months), total_los_9months = sum(los_9months), 
-            total_los_12months = sum(los_12months), total_los_1.5years = sum(los_1.5years), total_los_2years = sum(los_2years), 
-            total_los_2.5years = sum(los_2.5years), total_los_3years = sum(los_3years), total_los_3.5years = sum(los_3.5years), 
-            total_los_4years = sum(los_4years), total_los_4.5years = sum(los_4.5years), total_los_5years = sum(los_5years)) %>%
+los2014_apc_patient_agg_cr <- los2014_apc_events %>%
+  filter(episode_cancer_related == "Y") %>%
+  group_by(patientid) %>%
+  
+  #cumulative total LOS 
+  summarize(cum_total_los_3months = sum(los_3months), cum_total_los_6months = sum(los_6months), cum_total_los_9months = sum(los_9months), 
+            cum_total_los_12months = sum(los_12months), cum_total_los_1.5years = sum(los_1.5years), cum_total_los_2years = sum(los_2years), 
+            cum_total_los_2.5years = sum(los_2.5years), cum_total_los_3years = sum(los_3years), cum_total_los_3.5years = sum(los_3.5years), 
+            cum_total_los_4years = sum(los_4years), cum_total_los_4.5years = sum(los_4.5years), cum_total_los_5years = sum(los_5years),
+  
+  #period-specific total LOS (i.e. los 6 months is that which occurs between 3 and 6 months only)
+            ps_total_los_3months = cum_total_los_3months, ps_total_los_6months = cum_total_los_6months-cum_total_los_3months, 
+            ps_total_los_9months = cum_total_los_9months-cum_total_los_6months, ps_total_los_12months = cum_total_los_12months-cum_total_los_9months, 
+            ps_total_los_1.5years = cum_total_los_1.5years-cum_total_los_12months, ps_total_los_2years = cum_total_los_2years-cum_total_los_1.5years, 
+            ps_total_los_2.5years = cum_total_los_2.5years-cum_total_los_2years, ps_total_los_3years = cum_total_los_3years-cum_total_los_2.5years, 
+            ps_total_los_3.5years = cum_total_los_3.5years-cum_total_los_3years, ps_total_los_4years = cum_total_los_4years-cum_total_los_3.5years, 
+            ps_total_los_4.5years = cum_total_los_4.5years-cum_total_los_4years, ps_total_los_5years = cum_total_los_5years-cum_total_los_4.5years) %>%
+  
+  #adding survival for each patient
+  left_join(select(los2014_apc_patients_survival, patientid, alive_3months, alive_6months, alive_9months, alive_12months, alive_1.5years, alive_2years, 
+                   alive_2.5years, alive_3years, alive_3.5years, alive_4years, alive_4.5years, alive_5years), by = "patientid")
+
+
+los2014_apc_patient_agg_all <- los2014_apc_events %>%
+  group_by(patientid) %>%
+
+  #cumulative total LOS 
+  summarize(cum_total_los_3months = sum(los_3months), cum_total_los_6months = sum(los_6months), cum_total_los_9months = sum(los_9months), 
+            cum_total_los_12months = sum(los_12months), cum_total_los_1.5years = sum(los_1.5years), cum_total_los_2years = sum(los_2years), 
+            cum_total_los_2.5years = sum(los_2.5years), cum_total_los_3years = sum(los_3years), cum_total_los_3.5years = sum(los_3.5years), 
+            cum_total_los_4years = sum(los_4years), cum_total_los_4.5years = sum(los_4.5years), cum_total_los_5years = sum(los_5years),
+            
+            #period-specific total LOS (i.e. los 6 months is that which occurs between 3 and 6 months only)
+            ps_total_los_3months = cum_total_los_3months, ps_total_los_6months = cum_total_los_6months-cum_total_los_3months, 
+            ps_total_los_9months = cum_total_los_9months-cum_total_los_6months, ps_total_los_12months = cum_total_los_12months-cum_total_los_9months, 
+            ps_total_los_1.5years = cum_total_los_1.5years-cum_total_los_12months, ps_total_los_2years = cum_total_los_2years-cum_total_los_1.5years, 
+            ps_total_los_2.5years = cum_total_los_2.5years-cum_total_los_2years, ps_total_los_3years = cum_total_los_3years-cum_total_los_2.5years, 
+            ps_total_los_3.5years = cum_total_los_3.5years-cum_total_los_3years, ps_total_los_4years = cum_total_los_4years-cum_total_los_3.5years, 
+            ps_total_los_4.5years = cum_total_los_4.5years-cum_total_los_4years, ps_total_los_5years = cum_total_los_5years-cum_total_los_4.5years) %>%
   
   #adding survival for each patient
   left_join(select(los2014_apc_patients_survival, patientid, alive_3months, alive_6months, alive_9months, alive_12months, alive_1.5years, alive_2years, 
@@ -210,54 +243,18 @@ los2014_apc_patient_agg <- los2014_apc_events %>%
 
 
 ##### ADDING VARIABLES NEEDED FOR AGE BREAKDOWNS #####   
-los2014_apc_patient_agg <- los2014_apc_patient_agg %>%
+los2014_apc_patient_agg_cr <- los2014_apc_patient_agg_cr %>%
   mutate(patientid = as.character(patientid)) %>%
-  
-  #adding in DOB and calculating age at diag
-  left_join(select(los2014_cohort, patientid, diagnosisdatebest, birthdatebest), by = "patientid") %>%
-  mutate(diag_age_days = difftime(as.Date(diagnosisdatebest), as.Date(birthdatebest), units = "days")) %>%
-  
-  #ageing on for 1, 2 and 5 years post-diagnosis 
-  mutate(age_1yr_postdiag = as.numeric(diag_age_days + 365),
-         age_2yrs_postdiag = as.numeric(diag_age_days + 730),
-         age_5yrs_postdiag = as.numeric(diag_age_days + 1825)) %>%
-  mutate(age_1yr_postdiag = floor(age_1yr_postdiag/365),
-         age_2yrs_postdiag = floor(age_2yrs_postdiag/365),
-         age_5yrs_postdiag = floor(age_5yrs_postdiag/365)) %>%
-  
-  #converting to age groups
-  mutate(age_1yr_postdiag = case_when(age_1yr_postdiag < 10 ~ "0-9",
-                                      age_1yr_postdiag < 20 & age_1yr_postdiag > 9 ~ "10-19",
-                                      age_1yr_postdiag < 30 & age_1yr_postdiag > 19 ~ "20-29",
-                                      age_1yr_postdiag < 40 & age_1yr_postdiag > 29 ~ "30-39",
-                                      age_1yr_postdiag < 50 & age_1yr_postdiag > 39 ~ "40-49",
-                                      age_1yr_postdiag < 60 & age_1yr_postdiag > 49 ~ "50-59",
-                                      age_1yr_postdiag < 70 & age_1yr_postdiag > 59 ~ "60-69",
-                                      age_1yr_postdiag < 80 & age_1yr_postdiag > 69 ~ "70-79",
-                                      age_1yr_postdiag > 79 ~ "80+")) %>%
-  mutate(age_2yrs_postdiag = case_when(age_2yrs_postdiag < 10 ~ "0-9",
-                                       age_2yrs_postdiag < 20 & age_2yrs_postdiag > 9 ~ "10-19",
-                                       age_2yrs_postdiag < 30 & age_2yrs_postdiag > 19 ~ "20-29",
-                                       age_2yrs_postdiag < 40 & age_2yrs_postdiag > 29 ~ "30-39",
-                                       age_2yrs_postdiag < 50 & age_2yrs_postdiag > 39 ~ "40-49",
-                                       age_2yrs_postdiag < 60 & age_2yrs_postdiag > 49 ~ "50-59",
-                                       age_2yrs_postdiag < 70 & age_2yrs_postdiag > 59 ~ "60-69",
-                                       age_2yrs_postdiag < 80 & age_2yrs_postdiag > 69 ~ "70-79",
-                                       age_2yrs_postdiag > 79 ~ "80+")) %>%
-  mutate(age_5yrs_postdiag = case_when(age_5yrs_postdiag < 10 ~ "0-9",
-                                       age_5yrs_postdiag < 20 & age_5yrs_postdiag > 9 ~ "10-19",
-                                       age_5yrs_postdiag < 30 & age_5yrs_postdiag > 19 ~ "20-29",
-                                       age_5yrs_postdiag < 40 & age_5yrs_postdiag > 29 ~ "30-39",
-                                       age_5yrs_postdiag < 50 & age_5yrs_postdiag > 39 ~ "40-49",
-                                       age_5yrs_postdiag < 60 & age_5yrs_postdiag > 49 ~ "50-59",
-                                       age_5yrs_postdiag < 70 & age_5yrs_postdiag > 59 ~ "60-69",
-                                       age_5yrs_postdiag < 80 & age_5yrs_postdiag > 69 ~ "70-79",
-                                       age_5yrs_postdiag > 79 ~ "80+")) %>%
-  select(-c(diagnosisdatebest, birthdatebest, diag_age_days))
+  left_join(., los2014_cohort_agevars, by = "patientid") 
 
+los2014_apc_patient_agg_all <- los2014_apc_patient_agg_all %>%
+  mutate(patientid = as.character(patientid)) %>%
+  left_join(., los2014_cohort_agevars, by = "patientid") 
+  
 
 ##### WRITE OUT CLEANED PATIENT-LEVEL AGGREGATED APC DATA ##### 
-write.csv(los2014_apc_patient_agg, "N:/INFO/_LIVE/NCIN/Macmillan_Partnership/Length of Stay - 2023/Data/Patient-level aggregated APC data 20240308.csv")
+write.csv(los2014_apc_patient_agg_cr, "N:/INFO/_LIVE/NCIN/Macmillan_Partnership/Length of Stay - 2023/Data/Patient-level aggregated APC data CR 20240409.csv")
+write.csv(los2014_apc_patient_agg_all, "N:/INFO/_LIVE/NCIN/Macmillan_Partnership/Length of Stay - 2023/Data/Patient-level aggregated APC data all adms 20240409.csv")
 
 
   
