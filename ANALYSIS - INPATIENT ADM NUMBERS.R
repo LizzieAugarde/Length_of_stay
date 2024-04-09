@@ -148,6 +148,51 @@ ps_total_admissions_all_list <- mget(ps_total_admissions_all_objects)
 combined_ps_total_adms_all <- do.call(rbind, ps_total_admissions_all_list)
 
 
+##### CUMULATIVE ADMISSIONS #####
+#cancer-related admissions 
+create_cum_total_admissions <- function(data, age_variable, adms_variable, period) {
+  data %>%
+    mutate(!!adms_variable := ifelse(is.na(!!adms_variable), 0, !!adms_variable)) %>%
+    select(patientid, !!age_variable, !!adms_variable) %>%
+    group_by(!!age_variable) %>%
+    summarise(adms_in_period = sum(!!adms_variable)) %>%
+    rename("age_group" := !!age_variable) %>%
+    mutate(period = period)
+} #creates data frame of adms by age group in a specified period
+
+cum_total_admissions_cr <- lapply(time_intervals, function(interval) {
+  age_variable <- sym(paste0("age_", interval, "_postdiag"))
+  adms_variable <- sym(paste0("cum_total_adms_", interval))
+  period <- interval###will want to change this to something more readable eventually 
+  
+  create_cum_total_admissions(apc_adms_patient_agg_cr, age_variable, adms_variable, period)
+}) #runs create_cum_total_admissions across all time periods in a specified data frame
+
+names(cum_total_admissions_cr) <- paste0("cum_total_adms_cr", time_intervals)
+list2env(cum_total_admissions_cr, envir = .GlobalEnv)
+rm(cum_total_admissions_cr)
+cum_total_adms_cr_objects <- ls(pattern = "^cum_total_adms_cr")
+cum_total_adms_cr_list <- mget(cum_total_adms_cr_objects)
+combined_cum_total_adms_cr <- do.call(rbind, cum_total_adms_cr_list)
+
+
+#all admissions
+cum_total_admissions_all <- lapply(time_intervals, function(interval) {
+  age_variable <- sym(paste0("age_", interval, "_postdiag"))
+  adms_variable <- sym(paste0("cum_total_adms_", interval))
+  period <- interval###will want to change this to something more readable eventually 
+  
+  create_cum_total_admissions(apc_adms_patient_agg_all, age_variable, adms_variable, period)
+})
+
+names(cum_total_admissions_all) <- paste0("cum_total_adms_all_", time_intervals)
+list2env(cum_total_admissions_all, envir = .GlobalEnv)
+rm(cum_total_admissions_all)
+cum_total_admissions_all_objects <- ls(pattern = "^cum_total_adms_all")
+cum_total_admissions_all_list <- mget(cum_total_admissions_all_objects)
+combined_cum_total_adms_all <- do.call(rbind, cum_total_admissions_all_list)
+
+
 
 ##### PERIOD-SPECIFIC ADMISSIONS PER PATIENT BY TIME PERIOD #####
 #cancer-related admissions 
@@ -197,4 +242,56 @@ apc_adms_per_patient_plot_all <- ggplot(apc_adms_per_patient_all, aes(x = period
   theme(plot.caption = element_text(hjust = 0, size = 8),
         plot.title = element_text(hjust = 0.5, size = 12, face = "bold"))
 
+
+
+
+
+
+##### CUMULATIVE ADMISSIONS PER PATIENT BY TIME PERIOD #####
+#cancer-related admissions 
+apc_adms_per_patient_cr <- left_join(combined_cum_total_adms_cr, combined_survival_cohort, by = c("age_group", "period"))
+
+apc_adms_per_patient_cr <- apc_adms_per_patient_cr %>%
+  phe_rate(., adms_in_period, number_alive_at_period_end, type = "standard", confidence = 0.95, multiplier = 1) %>%
+  rename("rate" = "value") %>%
+  mutate(period = factor(period, levels = time_intervals))
+
+write.csv(apc_adms_per_patient_cr, "N:/INFO/_LIVE/NCIN/Macmillan_Partnership/Length of Stay - 2023/Results/APC cum number admissions CR per patient by age 20240409.csv")  
+
+apc_adms_per_patient_plot_cr <- ggplot(apc_adms_per_patient_cr, aes(x = period, y = rate, group = age_group)) + 
+  geom_bar(stat = "identity", position = "dodge", aes(fill = age_group)) + 
+  geom_errorbar(aes(ymin = lowercl, ymax = uppercl, group = age_group), position = "dodge", stat = "identity", linewidth = 0.1) +
+  geom_point(data = gen_pop_apc, aes(x = period, y = rate, fill = age_group), 
+             position = position_dodge(0.9), size = 2, shape = 21, color = "black", stroke = 1.5) +
+  scale_y_continuous(limits = c(0, 12), breaks = c(0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12)) +
+  labs(x = "Time post-diagnosis", y = "Admissions per patient", fill = "Age group",
+       caption = "Bars indicate cancer-related cumulative admissions in those diagnosed with cancer in 2014, i.e. '6 months' refers to all those occurring within 6 months post-diagnosis.
+       \nCircles indicate average admissions in the general population between 2013/14 and 2019/20",
+       title = "Cancer-related inpatient admissions per patient in the cancer population\nand all admissions in the general population") +
+  theme(plot.caption = element_text(hjust = 0, size = 8),
+        plot.title = element_text(hjust = 0.5, size = 12, face = "bold"))
+
+
+#all admissions 
+apc_adms_per_patient_all <- left_join(combined_cum_total_adms_all, combined_survival_cohort, by = c("age_group", "period"))
+
+apc_adms_per_patient_all <- apc_adms_per_patient_all %>%
+  phe_rate(., adms_in_period, number_alive_at_period_end, type = "standard", confidence = 0.95, multiplier = 1) %>%
+  rename("rate" = "value") %>%
+  mutate(period = factor(period, levels = time_intervals))
+
+write.csv(apc_adms_per_patient_all, "N:/INFO/_LIVE/NCIN/Macmillan_Partnership/Length of Stay - 2023/Results/APC cum number admissions all per patient by age 20240409.csv")  
+
+apc_adms_per_patient_plot_all <- ggplot(apc_adms_per_patient_all, aes(x = period, y = rate, group = age_group)) + 
+  geom_bar(stat = "identity", position = "dodge", aes(fill = age_group)) + 
+  geom_errorbar(aes(ymin = lowercl, ymax = uppercl, group = age_group), position = "dodge", stat = "identity", linewidth = 0.1) +
+  geom_point(data = gen_pop_apc, aes(x = period, y = rate, fill = age_group), 
+             position = position_dodge(0.9), size = 2, shape = 21, color = "black", stroke = 1.5) +
+  #scale_y_continuous(limits = c(0, 10), breaks = c(0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10)) +
+  labs(x = "Time post-diagnosis", y = "Admissions per patient", fill = "Age group",
+       caption = "Bars indicate all cumulative admissions in those diagnosed with cancer in 2014, i.e. '6 months' refers to all those occurring within 6 months post-diagnosis.
+       \nCircles indicate average admissions in the general population between 2013/14 and 2019/20",
+       title = "All inpatient admissions attendances per patient in the cancer population and general population") +
+  theme(plot.caption = element_text(hjust = 0, size = 8),
+        plot.title = element_text(hjust = 0.5, size = 12, face = "bold"))
 
