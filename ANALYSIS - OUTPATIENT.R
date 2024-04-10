@@ -52,7 +52,7 @@ create_ps_total_appts <- function(data, age_variable, appts_variable, period) {
 
 ps_total_appts <- lapply(time_intervals, function(interval) {
   age_variable <- sym(paste0("age_", interval, "_postdiag"))
-  appts_variable <- sym(paste0("ps_appts_", interval))
+  appts_variable <- sym(paste0("ps_total_appt_", interval))
   period <- interval###will want to change this to something more readable eventually 
   
   create_ps_total_appts(los2014_op_patient_agg, age_variable, appts_variable, period)
@@ -80,7 +80,7 @@ create_cum_total_appts <- function(data, age_variable, appts_variable, period) {
 
 cum_total_appts <- lapply(time_intervals, function(interval) {
   age_variable <- sym(paste0("age_", interval, "_postdiag"))
-  appts_variable <- sym(paste0("cum_appts_", interval))
+  appts_variable <- sym(paste0("cum_total_appt_", interval))
   period <- interval###will want to change this to something more readable eventually 
   
   create_cum_total_appts(los2014_op_patient_agg, age_variable, appts_variable, period)
@@ -92,6 +92,8 @@ rm(cum_total_appts)
 cum_total_appts_objects <- ls(pattern = "^cum_total_appts")
 cum_total_appts_list <- mget(cum_total_appts_objects)
 combined_cum_total_appts <- do.call(rbind, cum_total_appts_list)
+
+
 
 ##### APPOINTMENTS PER PATIENT BY TIME PERIOD #####
 #period-specific
@@ -109,7 +111,7 @@ op_appts_per_patient_plot <- ggplot(op_appts_per_patient, aes(x = period, y = ra
   geom_errorbar(aes(ymin = lowercl, ymax = uppercl, group = age_group), position = "dodge", stat = "identity", linewidth = 0.1) +
   geom_point(data = gen_pop_op, aes(x = period, y = rate, fill = age_group), 
              position = position_dodge(0.9), size = 2, shape = 21, color = "black", stroke = 1.5) +
-  #scale_y_continuous(limits = c(0, 0.8), breaks = c(0, 0.2, 0.4, 0.6, 0.8)) +
+  scale_y_continuous(limits = c(0, 10), breaks = c(0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10)) +
   labs(x = "Time post-diagnosis", y = "Appointments per patient", fill = "Age group",
        caption = "Bars indicate period-specific cancer-related outpatient appointments in those diagnosed with cancer in 2014\ni.e. '6 months' refers to those occurring between 3 and 6 months post-diagnosis.
        \nCircles indicate average appointments in the general population between 2013/14 and 2019/20",
@@ -118,10 +120,10 @@ op_appts_per_patient_plot <- ggplot(op_appts_per_patient, aes(x = period, y = ra
         plot.title = element_text(hjust = 0.5, size = 12, face = "bold"))
 
 #cumulative
-op_appts_per_patient <- left_join(combined_cum_total_attends, combined_survival_cohort, by = c("age_group", "period"))
+op_appts_per_patient <- left_join(combined_cum_total_appts, combined_survival_cohort, by = c("age_group", "period"))
 
 op_appts_per_patient <- op_appts_per_patient %>%
-  phe_rate(., atts_in_period, number_alive_at_period_end, type = "standard", confidence = 0.95, multiplier = 1) %>%
+  phe_rate(., appts_in_period, number_alive_at_period_end, type = "standard", confidence = 0.95, multiplier = 1) %>%
   rename("rate" = "value") %>%
   mutate(period = factor(period, levels = time_intervals))
 
@@ -132,7 +134,7 @@ op_appts_per_patient_plot <- ggplot(op_appts_per_patient, aes(x = period, y = ra
   geom_errorbar(aes(ymin = lowercl, ymax = uppercl, group = age_group), position = "dodge", stat = "identity", linewidth = 0.1) +
   geom_point(data = gen_pop_op, aes(x = period, y = rate, fill = age_group), 
              position = position_dodge(0.9), size = 2, shape = 21, color = "black", stroke = 1.5) +
-  #scale_y_continuous(limits = c(0, 10), breaks = c(0,2, 4, 6, 8, 10)) +
+  scale_y_continuous(limits = c(0, 80), breaks = c(0,20, 40, 60, 80)) +
   labs(x = "Time post-diagnosis", y = "Appointments per patient", fill = "Age group",
        caption = "Bars indicate cumulative cancer-related outpatient appointments  in those diagnosed with cancer in 2014\ni.e. '6 months' refers to those occurring within 6 months post-diagnosis.
        \nCircles indicate average appointments in the general population between 2013/14 and 2019/20",

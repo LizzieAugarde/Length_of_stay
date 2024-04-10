@@ -60,7 +60,7 @@ los2014_op_events <- los2014_op_events %>%
   mutate(death_diag_comp = interval(FOLLOW_UP_START, DEATHDATEBEST) / days(1)) %>%
   mutate(diag_appt_comp = interval(FOLLOW_UP_START, APPTDATE) / days(1)) %>% 
   mutate(fuend_appt_comp = interval(APPTDATE, FOLLOW_UP_END) / days(1)) %>% 
-  mutate(cohort_check = ifelse(PATIENTID %in% los2014_cohort$PATIENTID, "TRUE", "FALSE")) %>%
+  #mutate(cohort_check = ifelse(PATIENTID %in% los2014_cohort$PATIENTID, "TRUE", "FALSE")) %>%
   filter(diag_appt_comp >= 0) %>% #keeping only appointments on or after diag date
   filter(fuend_appt_comp >= 0) #keeping only appointments starting on or before follow up end date
 
