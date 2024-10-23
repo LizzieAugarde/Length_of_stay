@@ -23,6 +23,7 @@ select * from
         t.stage_best_system, 
         t.stage_pi,
         t.stage_pi_detail,
+        t.site_icd10r4_o2_3char_from2013,
         i.imd19_decile_lsoas,
         i.imd19_quintile_lsoas,
         s.ndrs_main,

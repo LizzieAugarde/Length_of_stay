@@ -20,23 +20,23 @@ cohort <- dbGetQueryOracle(casref01, "SELECT * FROM LOS2014_COHORT", rowlimit = 
 
 
 ##### CREATING DENOMINATOR DATA FRAME - WHETHER A PATIENT IS ALIVE AT THE END OF EACH TIME PERIOD ##### 
-cohort_survival <- cohort %>%
-  clean_names() %>%
-  mutate(surv_days_post_diag = difftime(as.Date(deathdatebest), as.Date(follow_up_start), units = "days")) %>% #days alive after diagnosis 
+cohort_survival <- cohort |>
+  clean_names() |>
+  mutate(surv_days_post_diag = difftime(as.Date(deathdatebest), as.Date(follow_up_start), units = "days")) |> #days alive after diagnosis 
   
   #variables indicating whether patient is alive at the end of each time period 
   mutate(alive_12months = ifelse(surv_days_post_diag >= 365 | is.na(surv_days_post_diag), "Yes", "No"),
          alive_2years = ifelse(surv_days_post_diag >= 730 | is.na(surv_days_post_diag), "Yes", "No"),
          alive_3years = ifelse(surv_days_post_diag >= 1095 | is.na(surv_days_post_diag), "Yes", "No"),
          alive_4years = ifelse(surv_days_post_diag >= 1460 | is.na(surv_days_post_diag), "Yes", "No"),
-         alive_5years = ifelse(surv_days_post_diag >= 1825 | is.na(surv_days_post_diag), "Yes", "No")) %>%
+         alive_5years = ifelse(surv_days_post_diag >= 1825 | is.na(surv_days_post_diag), "Yes", "No")) |>
   select(patientid, alive_12months, alive_2years, alive_3years, alive_4years, alive_5years) 
 
 
 ##### CREATING CLEANED COHORT DATASET ########
-cohort_clean <- cohort %>% 
-  clean_names() %>%
-  mutate(patientid = as.character(patientid)) %>%
+cohort_clean <- cohort |> 
+  clean_names() |>
+  mutate(patientid = as.character(patientid)) |>
   mutate(diag_age_days = difftime(as.Date(diagnosisdatebest), as.Date(birthdatebest), units = "days")) 
   
 #ageing on - working out each patient's age at each time point post-diagnosis
@@ -45,7 +45,7 @@ cohort_clean <- cohort_clean |>
          age_2years_postdiag = as.numeric(diag_age_days + 730),
          age_3years_postdiag = as.numeric(diag_age_days + 1095),
          age_4years_postdiag = as.numeric(diag_age_days + 1460),
-         age_5years_postdiag = as.numeric(diag_age_days + 1825)) %>%
+         age_5years_postdiag = as.numeric(diag_age_days + 1825)) |>
   mutate(age_12months_postdiag = floor(age_12months_postdiag/365),
          age_2years_postdiag = floor(age_2years_postdiag/365),
          age_3years_postdiag = floor(age_3years_postdiag/365),
@@ -62,13 +62,14 @@ categorise_age <- function(agevar) {
   
 cohort_clean <- cohort_clean |>
   mutate(
-    age_12months_postdiag = categorize_age(age_12months_postdiag),
-    age_2years_postdiag = categorize_age(age_2years_postdiag),
-    age_3years_postdiag = categorize_age(age_3years_postdiag),
-    age_4years_postdiag = categorize_age(age_4years_postdiag),
-    age_5years_postdiag = categorize_age(age_5years_postdiag)) |>
+    age_12months_postdiag = categorise_age(age_12months_postdiag),
+    age_2years_postdiag = categorise_age(age_2years_postdiag),
+    age_3years_postdiag = categorise_age(age_3years_postdiag),
+    age_4years_postdiag = categorise_age(age_4years_postdiag),
+    age_5years_postdiag = categorise_age(age_5years_postdiag)) |>
 
-#ethnicity 
+
+  #ethnicity 
   mutate(ethnicity = case_when(ethnicity %in% c("A", "B", "C", "0") ~ "White",
                                ethnicity %in% c("D", "E", "F", "G") ~ "Mixed",
                                ethnicity %in% c("H", "J", "K", "L") ~ "Asian",
@@ -77,41 +78,98 @@ cohort_clean <- cohort_clean |>
                                ethnicity == "S" ~ "Other",
                                ethnicity %in% c("Z", "X") ~ "Not known", TRUE ~ "Not known"))
 
-  #removing unnecessary variables 
-  select(-c(diagnosisdatebest, birthdatebest, diag_age_days))
-####need to add in staging
 
-##### DENOMINATOR DATA FRAMES BY TIME PERIOD AND AGE GROUP FOR GRAPHS #######
+#stage at diagnosis
+source("stage_functions_tidy.R") #stage functions provided by Chloe Bright 
+
+#trans patient fix provided by Chloe Bright
+cohort_clean <- cohort_clean |> mutate(
+  stage_pi_detail = if_else(
+    condition = (
+      ((gender == 2 & site_icd10r4_o2_3char_from2013 %in% c("C60", "C61", "C62", "C63")) |
+         (gender == 1 & site_icd10r4_o2_3char_from2013 %in% c("C51", "C52", "C53", "C54", "C55", "C56", "C57", "C58"))
+      ) &
+        !(stage_best == "?" | is.na(stage_best))
+    ),
+    true = "Y",
+    false = stage_pi_detail
+  )
+)
+
+cohort_clean <- stage_table(cohort_clean) 
+
+
+#removing unnecessary variables 
+cohort_clean <- cohort_clean |>
+  select(-c(stage_best_system, stage_best, stage_pi, stage_pi_detail, 
+            site_icd10r4_o2_3char_from2013, SUMMARY_STAGE, EARLY_ADVANCED_STAGE, 
+            diagnosisdatebest, birthdatebest, diag_age_days, rank))
+
+
+##### DENOMINATOR DATA FRAMES BY TIME PERIOD, AGE GROUP AND EACH CHARACTERISTIC #######
 time_intervals <- c("12months", "2years", "3years", "4years", "5years")
 
-cohort_survival_age <- left_join(cohort_survival, cohort_agevars, by = "patientid")
+cohort_clean <- left_join(cohort_clean, cohort_survival, by = "patientid")
 
-#function to create a data frame of patients who are alive at the end of a time period, by age group and another variable 
-create_survival_cohort <- function(data, variable, alive_variable, period) {
-  data %>%
-    select(patientid, !!variable, !!alive_variable) %>%
-    filter(!!alive_variable == "Yes") %>%
-    group_by(!!variable) %>%
-    summarise(number_alive_at_period_end = n()) %>%
-    rename("age_group" := !!variable) %>%
+#function to create a data frame of patients who are alive at the end of a time period, by age group
+create_survival_cohort <- function(data, age_variable, alive_variable, period) {
+  data |>
+    select(patientid, !!age_variable, !!alive_variable) |>
+    filter(!!alive_variable == "Yes") |>
+    group_by(!!age_variable) |>
+    summarise(number_alive_at_period_end = n()) |>
+    rename("age_group" := !!age_variable) |>
     mutate(period = period)
 }
 
 #function to run the create_survival_cohort function across all the time periods in the time_intervals object
-survival_cohorts <- lapply(time_intervals, function(interval) {
-  age_variable <- sym(paste0("age_", interval, "_postdiag"))
-  alive_variable <- sym(paste0("alive_", interval))
-  period <- interval
+#after first filtering to each value of a specified characteristic variable 
+#so we end up with a data frame of the number of patients alive at the end of each time period, for each value of the characteristic
+generate_survival_cohorts <- function(data, time_intervals, char_variable) {
   
-  create_survival_cohort(cohort_survival_age, age_variable, alive_variable, period)
-}) 
+  #get unique values of the characteristic of interest
+  unique_values <- unique(data[[char_variable]])
+  
+  #empty list to store results 
+  all_cohorts <- list()
+  
+  for (char_value in unique_values) {
+    filtered_data <- data |> 
+      filter(!!rlang::sym(char_variable) == char_value)
+    
+    #generate the survival cohort for each time interval
+    cohorts_for_characteristic <- lapply(time_intervals, function(interval) {
+      age_variable <- sym(paste0("age_", interval, "_postdiag"))
+      alive_variable <- sym(paste0("alive_", interval))
+      period <- interval
+      
+      create_survival_cohort(filtered_data, age_variable, alive_variable, period)
+    })
+    
+    #combine the cohorts for this value of the characteristic
+    combined_cohort <- bind_rows(cohorts_for_characteristic, .id = "time_interval")
+    combined_cohort <- combined_cohort |>
+      mutate(characteristic = char_value)
+    
+    #store the combined cohort in the list
+    all_cohorts[[char_value]] <- combined_cohort
+  }
+  
+  combined_all_cohorts <- bind_rows(all_cohorts, .id = "char_value")
+  
+  #name the output with the characteristic variable name 
+  output_name <- paste0("combined_survival_cohort_", char_variable)
+  assign(output_name, combined_all_cohorts, envir = .GlobalEnv)
+  
+  return(combined_all_cohorts)
 
-names(survival_cohorts) <- paste0("survival_cohort_", time_intervals)
-list2env(survival_cohorts, envir = .GlobalEnv) #converts the survival cohorts from a list to individual objects
-rm(survival_cohorts) #removes the list object
-survival_cohort_objects <- ls(pattern = "^survival_cohort")
-survival_cohort_list <- mget(survival_cohort_objects) 
-combined_survival_cohort <- do.call(rbind, survival_cohort_list) #combines to a single data frame ie the number alive at each time interval, by age group
+}
+
+#specify a characteristic to generate age-specific survival cohorts for
+char_variable <- "ndrs_main"
+
+#run survival cohorts by age for a specified characteristic variable
+combined_survival_cohort <- generate_survival_cohorts(cohort_clean, time_intervals, char_variable)
 
 
 
