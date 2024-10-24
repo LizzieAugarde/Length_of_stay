@@ -124,7 +124,8 @@ create_survival_cohort <- function(data, age_variable, alive_variable, period) {
 
 #function to run the create_survival_cohort function across all the time periods in the time_intervals object
 #after first filtering to each value of a specified characteristic variable 
-#so we end up with a data frame of the number of patients alive at the end of each time period, for each value of the characteristic
+#so we end up with a data frame of the number of patients in each age group alive at the end of each time period, 
+#for each value of the characteristic
 generate_survival_cohorts <- function(data, time_intervals, char_variable) {
   
   #get unique values of the characteristic of interest
