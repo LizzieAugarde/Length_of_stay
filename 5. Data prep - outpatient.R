@@ -18,7 +18,6 @@ casref01 <- createConnection()
 op_events_query <- "select 
     a.tumourid, 
     a.patientid, 
-    a.site_icd10_o2_3char,
     a.follow_up_start, 
     a.follow_up_end, 
     a.deathdatebest, 
@@ -40,23 +39,23 @@ op_events <- dbGetQueryOracle(casref01, op_events_query, rowlimit = NA)
 
 #small number of ATTENDKEYANONs appear twice, same appointments associated with 2 patients, excluding all these ATTENDKEYANONs
 #takes approx 5 minutes
-op_events <- op_events %>%
-  group_by(ATTENDKEYANON) %>%
-  filter(n() == 1) %>%
+op_events <- op_events |>
+  group_by(ATTENDKEYANON) |>
+  filter(n() == 1) |>
   ungroup()
 
 #filtering based on appointment dates
 #FOLLOW_UP_START is diagnosis date, created in cohort SQL query
 #FOLLOW_UP_END is 5 years after diagnosis date, created in cohort SQL query
-op_events <- op_events %>% 
-  filter((interval(FOLLOW_UP_START, APPTDATE) / days(1)) >= 0) %>% #keeping only appointments occurring on or after diagnosis date
+op_events <- op_events |> 
+  filter((interval(FOLLOW_UP_START, APPTDATE) / days(1)) >= 0) |> #keeping only appointments occurring on or after diagnosis date
   filter((interval(APPTDATE, FOLLOW_UP_END) / days(1)) >= 0) #keeping only appointments occurring on or before follow up end date
 
 
 ##### CALCULATING HOW LONG AFTER DIAGNOSIS EACH APPOINTMENT OCCURS ##### 
-op_events <- op_events %>%
-  clean_names() %>%
-  mutate(appt_days_post_diag = difftime(as.Date(apptdate), as.Date(follow_up_start), units = "days")) %>%
+op_events <- op_events |>
+  clean_names() |>
+  mutate(appt_days_post_diag = difftime(as.Date(apptdate), as.Date(follow_up_start), units = "days")) |>
   mutate(appt_12months = ifelse(appt_days_post_diag < 366, 1, 0),
          appt_2years = ifelse(appt_days_post_diag < 731, 1, 0),
          appt_3years = ifelse(appt_days_post_diag < 1096, 1, 0),
@@ -65,8 +64,8 @@ op_events <- op_events %>%
   
 
 ##### TOTAL APPOINTMENTS PER PATIENT PER TIME PERIOD ##### 
-op_patient_agg <- op_events %>%
-  group_by(patientid) %>%  
+op_patient_agg <- op_events |>
+  group_by(patientid) |>  
   
   #cumulative total LOS - adding up all appointments for each patient in each time period 
   summarize(sum_appt_12months = sum(appt_12months), 
@@ -82,11 +81,7 @@ op_patient_agg <- op_events %>%
             ps_appt_2years = sum_appt_2years-sum_appt_12months, 
             ps_appt_3years = sum_appt_3years-sum_appt_2years, 
             ps_appt_4years = sum_appt_4years-sum_appt_3years,
-            ps_appt_5years = sum_appt_5years-sum_appt_4years) %>%
+            ps_appt_5years = sum_appt_5years-sum_appt_4years) |>
   
-  #adding survival for each patient
-  left_join(cohort_survival, by = "patientid") %>%
-
-  #adding age variables from the cohort table
-  mutate(patientid = as.character(patientid)) %>%
-  left_join(., cohort_agevars, by = "patientid") 
+  #adding survival and demographic variables for each patient
+  left_join(cohort_clean, by = "patientid") 
