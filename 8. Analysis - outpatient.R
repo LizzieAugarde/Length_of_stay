@@ -73,7 +73,7 @@ generate_total_appts <- function(data, time_intervals, char_variable) {
 }
 
 #specify a characteristic to generate age-specific appointments data frames for
-char_variable <- "ethnicity"
+char_variable <- "final_route"
 
 #run appointments by age for a specified characteristic variable
 combined_total_appts <- generate_total_appts(op_patient_agg, time_intervals, char_variable)
@@ -102,12 +102,13 @@ op_patient_rate <- op_patient_rate |>
   select(c(period, age_group, characteristic, appts_in_period, number_alive_at_period_end, rate, lowercl, uppercl)) |>
   
   #suppression
-  mutate(adms_in_period = ifelse(adms_in_period <5, "<5", adms_in_period),
+  mutate(appts_in_period = ifelse(appts_in_period <5, "<5", appts_in_period),
          number_alive_at_period_end = ifelse(number_alive_at_period_end <5, "<5", number_alive_at_period_end))
 
 
 ##### WRITE OUT #####
-char_write_out <- "Ethnicity"
+char_write_out <- "Route to diagnosis"
+rownames(op_patient_rate) <- NULL
 write.xlsx(op_patient_rate, "N:/INFO/_LIVE/NCIN/Macmillan_Partnership/Length of Stay - 2023/Results/October 2024/Outpatient appointments results.xlsx", 
            sheetName = char_write_out, append = TRUE)
 

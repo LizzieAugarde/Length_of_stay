@@ -74,7 +74,7 @@ generate_total_atts <- function(data, time_intervals, char_variable) {
 }
 
 #specify a characteristic to generate age-specific attendances data frames for
-char_variable <- "ethnicity"
+char_variable <- "final_route"
 
 #run attendances by age for a specified characteristic variable
 combined_total_atts <- generate_total_atts(ae_patient_agg, time_intervals, char_variable)
@@ -103,14 +103,15 @@ ae_patient_rate <- ae_patient_rate |>
   select(c(period, age_group, characteristic, atts_in_period, number_alive_at_period_end, rate, lowercl, uppercl)) |>
   
   #suppression
-  mutate(adms_in_period = ifelse(adms_in_period <5, "<5", adms_in_period),
+  mutate(atts_in_period = ifelse(atts_in_period <5, "<5", atts_in_period),
          number_alive_at_period_end = ifelse(number_alive_at_period_end <5, "<5", number_alive_at_period_end))
 
 
 ##### WRITE OUT #####
-char <- "Ethnicity"
+char_write_out <- "Route to diagnosis"
+rownames(ae_patient_rate) <- NULL
 write.xlsx(ae_patient_rate, "N:/INFO/_LIVE/NCIN/Macmillan_Partnership/Length of Stay - 2023/Results/October 2024/A&E results.xlsx", 
-                                   sheetName = char, append = TRUE)
+          sheetName = char_write_out, append = TRUE)
 
 
 ##### GRAPH #####
