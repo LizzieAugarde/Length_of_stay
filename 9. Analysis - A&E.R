@@ -100,7 +100,11 @@ ae_patient_rate <- ae_patient_rate |>
                             
   #tidying the data frame for write out 
   select(-c(char_value.x, time_interval.x, time_interval.y)) |>
-  select(c(period, age_group, characteristic, atts_in_period, number_alive_at_period_end, rate, lowercl, uppercl))
+  select(c(period, age_group, characteristic, atts_in_period, number_alive_at_period_end, rate, lowercl, uppercl)) |>
+  
+  #suppression
+  mutate(adms_in_period = ifelse(adms_in_period <5, "<5", adms_in_period),
+         number_alive_at_period_end = ifelse(number_alive_at_period_end <5, "<5", number_alive_at_period_end))
 
 
 ##### WRITE OUT #####

@@ -166,7 +166,7 @@ generate_survival_cohorts <- function(data, time_intervals, char_variable) {
 }
 
 #specify a characteristic to generate age-specific survival cohorts for
-char_variable <- "ndrs_main"
+char_variable <- "final_route"
 
 #run survival cohorts by age for a specified characteristic variable
 combined_survival_cohort <- generate_survival_cohorts(cohort_clean, time_intervals, char_variable)

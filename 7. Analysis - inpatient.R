@@ -73,7 +73,7 @@ generate_total_adms <- function(data, time_intervals, char_variable) {
 }
 
 #specify a characteristic to generate age-specific admissions data frames for
-char_variable <- "ethnicity"
+char_variable <- "imd19_quintile_lsoas"
 
 #run attendances by age for a specified characteristic variable
 combined_total_adms <- generate_total_adms(apc_patient_agg, time_intervals, char_variable)
@@ -99,11 +99,16 @@ apc_patient_rate <- apc_patient_rate |>
   
   #tidying the data frame for write out 
   select(-c(char_value.x, time_interval.x, time_interval.y)) |>
-  select(c(period, age_group, characteristic, adms_in_period, number_alive_at_period_end, rate, lowercl, uppercl))
+  select(c(period, age_group, characteristic, adms_in_period, number_alive_at_period_end, rate, lowercl, uppercl)) |>
+
+  #suppression
+  mutate(adms_in_period = ifelse(adms_in_period <5, "<5", adms_in_period),
+         number_alive_at_period_end = ifelse(number_alive_at_period_end <5, "<5", number_alive_at_period_end))
 
 
 ##### WRITE OUT #####
-char <- "Ethnicity"
+char <- "IMD quintiles"
+rownames(apc_patient_rate) <- NULL
 write.xlsx(apc_patient_rate, "N:/INFO/_LIVE/NCIN/Macmillan_Partnership/Length of Stay - 2023/Results/October 2024/Inpatient admissions results.xlsx", 
            sheetName = char, append = TRUE)
                         
