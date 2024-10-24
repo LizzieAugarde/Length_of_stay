@@ -16,8 +16,6 @@ library(xlsx)
 ##### ATTENDANCES BY TIME INTERVAL AND AGE GROUP FOR EACH VALUE OF ANOTHER CHARACTERISTIC- NUMERATOR #####
 time_intervals <- c("12months", "2years", "3years", "4years", "5years")
 
-cohort_clean <- left_join(cohort_clean, cohort_survival, by = "patientid")
-
 #function to create a data frame of numbers of attendances in a time period by age group
 create_total_atts <- function(data, age_variable, atts_variable, alive_variable, period) {
   data %>%
@@ -83,7 +81,8 @@ combined_total_atts <- generate_total_atts(ae_patient_agg, time_intervals, char_
 
 
 ##### RATE OF ATTENDANCES PER PATIENT BY TIME PERIOD AND CHARACTERISTIC VALUE #####
-ae_patient_rate <- left_join(combined_total_atts_ethnicity, combined_survival_cohort_ethnicity, 
+ae_patient_rate <- left_join(get(paste0("combined_total_atts_", char_variable)), 
+                             get(paste0("combined_survival_cohort_", char_variable)), 
                              by = c("age_group", "period", "characteristic")) #join the numerator and survival cohort denominator table
 
 ae_patient_rate <- ae_patient_rate |>

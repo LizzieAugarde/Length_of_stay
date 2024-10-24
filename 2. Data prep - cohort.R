@@ -98,7 +98,6 @@ cohort_clean <- cohort_clean |> mutate(
 
 cohort_clean <- stage_table(cohort_clean) 
 
-
 #removing unnecessary variables 
 cohort_clean <- cohort_clean |>
   select(-c(stage_best_system, stage_best, stage_pi, stage_pi_detail, 

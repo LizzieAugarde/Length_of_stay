@@ -11,11 +11,11 @@
 library(PHEindicatormethods)
 library(dplyr)
 
+
+##### APPOINTMENTS BY TIME INTERVAL AND AGE GROUP FOR EACH VALUE OF ANOTHER CHARACTERISTIC- NUMERATOR #####
 time_intervals <- c("12months", "2years", "3years", "4years", "5years")
 
-
-##### APPOINTMENTS BY TIME INTERVAL AND AGE GROUP - NUMERATOR #####
-#function to create a data frame of numbers of appointments in a time period by age group
+#function to create a data frame of numbers of attendances in a time period by age group
 create_total_appts <- function(data, age_variable, appts_variable, alive_variable, period) {
   data %>%
     filter(!!alive_variable == "Yes") %>%
@@ -27,40 +27,85 @@ create_total_appts <- function(data, age_variable, appts_variable, alive_variabl
     mutate(period = period)
 } 
 
-#function to run the create_total_admissions function across all the time periods in the time_intervals object
-total_appts <- lapply(time_intervals, function(interval) {
-  age_variable <- sym(paste0("age_", interval, "_postdiag"))
-  appts_variable <- sym(paste0("ps_appt_", interval))
-  alive_variable <- sym(paste0("alive_", interval))
-  period <- interval
+#function to run the create_total_appts function across all the time periods in the time_intervals object
+#after first filtering to each value of a specified characteristic variable 
+#so we end up with a data frame of the total number of appointments by age group within each time period, 
+#for each value of the characteristic
+generate_total_appts <- function(data, time_intervals, char_variable) {
   
-  create_total_appts(op_patient_agg, age_variable, appts_variable, alive_variable, period)
-}) 
+  #get unique values of the characteristic of interest
+  unique_values <- unique(data[[char_variable]])
+  
+  #empty list to store results 
+  all_appts_dfs <- list()
+  
+  for (char_value in unique_values) {
+    filtered_data <- data |> 
+      filter(!!rlang::sym(char_variable) == char_value)
+    
+    #generate the appointments table for each time interval
+    total_appts <- lapply(time_intervals, function(interval) {
+      age_variable <- sym(paste0("age_", interval, "_postdiag"))
+      appts_variable <- sym(paste0("ps_appt_", interval))
+      alive_variable <- sym(paste0("alive_", interval))
+      period <- interval
+      
+      create_total_appts(filtered_data, age_variable, appts_variable, alive_variable, period)
+    })
+    
+    #combine the appointments data frames for this value of the characteristic
+    combined_total_appts <- bind_rows(total_appts, .id = "time_interval")
+    combined_total_appts <- combined_total_appts |>
+      mutate(characteristic = char_value)
+    
+    #store the combined cohort in the list
+    all_appts_dfs[[char_value]] <- combined_total_appts
+  }
+  
+  combined_total_appts <- bind_rows(all_appts_dfs, .id = "char_value")
+  
+  #name the output with the characteristic variable name 
+  output_name <- paste0("combined_total_appts_", char_variable)
+  assign(output_name, combined_total_appts, envir = .GlobalEnv)
+  
+  return(combined_total_appts)
+  
+}
 
-names(total_appts) <- paste0("total_appts", time_intervals) #converts the total appointments from a list to individual objects
-list2env(total_appts, envir = .GlobalEnv) #removes the list object
-rm(total_appts)
-total_appts_objects <- ls(pattern = "^total_appts")
-total_appts_list <- mget(total_appts_objects)
-combined_total_appts <- do.call(rbind, total_appts_list) #combines to a single data frame ie the number of appointments in each time interval, by age group
+#specify a characteristic to generate age-specific appointments data frames for
+char_variable <- "ethnicity"
+
+#run appointments by age for a specified characteristic variable
+combined_total_appts <- generate_total_appts(op_patient_agg, time_intervals, char_variable)
 
 
-##### RATE OF ADMISSIONS PER PATIENT BY TIME PERIOD #####
-op_patient_rate <- left_join(combined_total_appts, combined_survival_cohort, by = c("age_group", "period")) #join the numerator and survival cohort denominator table
+##### RATE OF APPOINTMENTS PER PATIENT BY TIME PERIOD #####
+op_patient_rate <- left_join(get(paste0("combined_total_appts_", char_variable)), 
+                             get(paste0("combined_survival_cohort_", char_variable)), 
+                             by = c("age_group", "period", "characteristic")) #join the numerator and survival cohort denominator table
 
-op_patient_rate <- op_patient_rate %>%
+op_patient_rate <- op_patient_rate |>
   #rate of appointments per alive patient, in each time period, by age group
-  phe_rate(., appts_in_period, number_alive_at_period_end, type = "standard", confidence = 0.95, multiplier = 1) %>%
-  rename("rate" = "value") %>%
-  mutate(period = factor(period, levels = time_intervals)) %>%
+  phe_rate(appts_in_period, number_alive_at_period_end, type = "standard", confidence = 0.95, multiplier = 1) |> #
+  rename("rate" = "value") |>
+  mutate(period = factor(period, levels = time_intervals)) |> #converting to a factor for the graph
   
   #making the time periods read better for the graph
-  mutate(period = case_when(period == "12months" ~ "1 year",
+  mutate(period = case_when(period == "12months" ~ "1 year", 
                             period == "2years" ~ "2 years",
                             period == "3years" ~ "3 years",
                             period == "4years" ~ "4 years",
-                            period == "5years" ~ "5 years"
-  ))
+                            period == "5years" ~ "5 years"))|>
+  
+  #tidying the data frame for write out 
+  select(-c(char_value.x, time_interval.x, time_interval.y)) |>
+  select(c(period, age_group, characteristic, appts_in_period, number_alive_at_period_end, rate, lowercl, uppercl))
+
+
+##### WRITE OUT #####
+char_write_out <- "Ethnicity"
+write.xlsx(op_patient_rate, "N:/INFO/_LIVE/NCIN/Macmillan_Partnership/Length of Stay - 2023/Results/October 2024/Outpatient appointments results.xlsx", 
+           sheetName = char_write_out, append = TRUE)
 
 
 ##### GRAPH #####
