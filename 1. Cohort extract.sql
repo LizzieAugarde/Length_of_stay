@@ -19,14 +19,15 @@ select * from
         p.birthdatebest, 
         p.gender,
         p.ethnicity,
+        t.site_icd10r4_o2_3char_from2013,
         t.stage_best,
         t.stage_best_system, 
         t.stage_pi,
         t.stage_pi_detail,
-        t.site_icd10r4_o2_3char_from2013,
         i.imd19_decile_lsoas,
         i.imd19_quintile_lsoas,
         s.ndrs_main,
+        r.final_route,
         t.diagnosisdatebest as follow_up_start, 
         coalesce(least(t.deathdatebest, t.diagnosisdatebest + 1825), t.diagnosisdatebest + 1825) as follow_up_end, --5 year follow up = 1825 days
         --need to rank by tumourid too as could have 2 tumours diagnosed on same day so both of these would have rank of 1 and be pulled through, but only want 1 tumour per patient so that tumour will be randomly picked based on which of the 2 tumour ids is smaller
@@ -36,6 +37,7 @@ left join av2021.at_patient_england@casref01 p on t.patientid = p.patientid
 left join av2021.at_geography_england@casref01 g on t.tumourid = g.tumourid --adding IMD
 left join imd.imd2019_equal_lsoas@casref01 i on g.lsoa11_code = i.lsoa11_code --adding IMD
 left join analysispollyjeffrey.at_site_england@casref01 s on t.tumourid = s.tumourid --including site from new site table 
+left join av2020.rtd2020 r on t.tumourid = r.tumourid --adding route to diagnosis
 where t.diagnosisyear = 2014
 and t.cascade_inci_flag = 1 --standard CAS exclusions
 and t.dco = 'N' --excluding those diagnosed on death certificate only 
