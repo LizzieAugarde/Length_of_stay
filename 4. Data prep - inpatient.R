@@ -32,18 +32,20 @@ from analysiselizabethaugarde.los2014_cohort a left join
         heslive.hes_linkage_av_apc@casref01 b on a.patientid = b.patientid left join --link to HES linkage fields
         heslive.hesapc@casref01 c on b.epikeyanon = c.epikeyanon and b.datayear = c.datayear left join --link to HES inpatient records
         heslive.hesapc_diag@casref01 d on c.epikeyanon = d.epikeyanon and c.datayear = d.datayear --link to HES inpatient diagnostic codes
-where c.datayear in ('1718', '1819') --, '1314', '1415', '1516', '1617', '1718', '1819', '1920'
+where c.datayear in ('1920') --, '1314', '1415', '1516', '1617', '1718', '1819', '1920'
 group by a.tumourid,
     a.patientid,
     a.follow_up_start,
     a.follow_up_end,
     a.deathdatebest,
+    c.epikeyanon,
+    c.datayear,
     c.admidate,
     c.disdate,
     c.epiend_raw,
     c.admimeth"
 
-apc_events_1718_1819 <- dbGetQueryOracle(casref01, apc_events_query, rowlimit = NA)
+apc_events_1920 <- dbGetQueryOracle(casref01, apc_events_query, rowlimit = NA)
 
 save(apc_events_1314_1415, file = "apc_events_1314_1415.RData")
 save(apc_events_1516_1617, file = "apc_events_1516_1617.RData")
@@ -126,14 +128,21 @@ apc_patient_agg <- apc_events |>#
   mutate(patientid = as.character(patientid)) |>
   group_by(patientid) |>
   
-  #cumulative total LOS - adding up all admissions for each patient in each time period 
+  #convert all LOS to 1 to allow for counting up admissions not total LOS in days 
+  mutate(los_12months = ifelse(los_12months > 0, 1, 0),
+         los_2years = ifelse(los_2years > 0, 1, 0),
+         los_3years = ifelse(los_3years > 0, 1, 0),
+         los_4years = ifelse(los_4years > 0, 1, 0),
+         los_5years = ifelse(los_5years > 0, 1, 0)) |>
+  
+  #cumulative total admissions - adding up all admissions for each patient in each time period 
   summarize(sum_los_12months = sum(los_12months), 
             sum_los_2years = sum(los_2years), 
             sum_los_3years = sum(los_3years), 
             sum_los_4years = sum(los_4years), 
             sum_los_5years = sum(los_5years),
   
-  #period-specific total LOS (i.e. LOS 2 years is the admissions which occur between 12 months and 2 years only)
+  #period-specific total admissions (i.e. LOS 2 years is the admissions which occur between 12 months and 2 years only)
             ps_los_12months = sum_los_12months, 
             
             #subtract the sum of admissions in 12 months from the sum in 2 years to get the total number between 12 months and 2 years

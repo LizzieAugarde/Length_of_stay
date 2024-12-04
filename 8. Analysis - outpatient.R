@@ -10,7 +10,7 @@
 ##### PREP ##### 
 library(PHEindicatormethods)
 library(dplyr)
-
+library(xlsx)
 
 ##### APPOINTMENTS BY TIME INTERVAL AND AGE GROUP FOR EACH VALUE OF ANOTHER CHARACTERISTIC- NUMERATOR #####
 time_intervals <- c("12months", "2years", "3years", "4years", "5years")

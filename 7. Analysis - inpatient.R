@@ -10,6 +10,7 @@
 ##### PREP ##### 
 library(PHEindicatormethods)
 library(dplyr)
+library(xlsx)
 
 
 ##### ATTENDANCES BY TIME INTERVAL AND AGE GROUP FOR EACH VALUE OF ANOTHER CHARACTERISTIC- NUMERATOR #####
