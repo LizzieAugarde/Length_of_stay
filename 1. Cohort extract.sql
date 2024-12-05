@@ -32,9 +32,9 @@ select * from
         coalesce(least(t.deathdatebest, t.diagnosisdatebest + 1825), t.diagnosisdatebest + 1825) as follow_up_end, --5 year follow up = 1825 days
         --need to rank by tumourid too as could have 2 tumours diagnosed on same day so both of these would have rank of 1 and be pulled through, but only want 1 tumour per patient so that tumour will be randomly picked based on which of the 2 tumour ids is smaller
         rank () over (partition by t.patientid order by t.diagnosisdatebest, t.tumourid asc) as rank
-from av2021.at_tumour_england@casref01 t
-left join av2021.at_patient_england@casref01 p on t.patientid = p.patientid
-left join av2021.at_geography_england@casref01 g on t.tumourid = g.tumourid --adding IMD
+from av2022.at_tumour_england@casref01 t
+left join av2022.at_patient_england@casref01 p on t.patientid = p.patientid
+left join av2022.at_geography_england@casref01 g on t.tumourid = g.tumourid --adding IMD
 left join imd.imd2019_equal_lsoas@casref01 i on g.lsoa11_code = i.lsoa11_code --adding IMD
 left join analysispollyjeffrey.at_site_england@casref01 s on t.tumourid = s.tumourid --including site from new site table 
 left join av2020.rtd2020 r on t.tumourid = r.tumourid --adding route to diagnosis
